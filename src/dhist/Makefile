@@ -10,14 +10,18 @@ CFLAGS=-O3
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
 
+all:	dhist
+
 %.o:	%.c
 	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
-librism.a:	$(OBJ)
-	ar -r $(RISMROOT)/lib/$@ $(OBJ)
+dhist:	$(OBJ) librism.a
+	$(CC) $(LFLAGS) -L$(RISMROOT)/lib $(OBJ) -lrism -largtable2 \
+	 -lblas -lm -o $(RISMROOT)/bin/$@
 
-all:    librism.a
+librism.a:
+	cd ../rism && make
 
 clean:
-	rm -f $(RISMROOT)/lib/librism.a
+	rm -f $(RISMROOT)/bin/dhist
 	rm -f $(OBJ)

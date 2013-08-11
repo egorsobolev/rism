@@ -24,12 +24,12 @@ int lavg_init(int natm, lavg_t *s)
   return 0;
 }
 
-int lavg_free(lavg_t *s)
+void lavg_free(lavg_t *s)
 {
   free(s->mn);
 }
 
-int lavg_writehdr(lavg_t *s, FILE *f)
+int lavg_writehdr(const lavg_t *s, FILE *f)
 {
   int n;
   n = 4 * s->nfun;
@@ -40,6 +40,23 @@ int lavg_writehdr(lavg_t *s, FILE *f)
     return -1;
 
   return 0;  
+}
+
+int lavg_readhdr(lavg_t *s, FILE *f)
+{
+  int n;
+  if (fread(s, sizeof(int), 3, f) != 3)
+    return -1;
+  n = 4 * s->nfun;
+  s->mn = malloc(n * sizeof(double));
+  if (!s->mn)
+    return -1;
+  s->mx = s->mn + s->nfun;
+  s->mean = s->mx + s->nfun;
+  s->std = s->mean + s->nfun;
+  if (fread(s->mn, sizeof(double), n, f) != n)
+    return -1;
+  return 0;
 }
 
 void lavg_update(const float *x, float *l, lavg_t *s)

@@ -16,8 +16,9 @@ struct LAVG {
 typedef struct LAVG lavg_t;
 
 int lavg_init(int natm, lavg_t *s);
-int lavg_free(lavg_t *s);
-int lavg_writehdr(lavg_t *s, FILE *f);
+void lavg_free(lavg_t *s);
+int lavg_writehdr(const lavg_t *s, FILE *f);
+int lavg_readhdr(lavg_t *s, FILE *f);
 void lavg_update(const float *x, float *l, lavg_t *s);
 void lavg_finish(lavg_t *s);
 
