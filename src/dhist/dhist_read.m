@@ -12,5 +12,5 @@ H.nfun = fread(f, 1, 'int');
 H.nfrm = fread(f, 1, 'int');
 H.lm = fread(f, H.nfun, 'int=>int');
 H.ld = fread(f, H.nfun, 'int=>int');
-H.hst = fread(f, H.n, 'uint16=>uint16');
+H.hst = fread(f, H.n, 'uint=>uint');
 fclose(f);

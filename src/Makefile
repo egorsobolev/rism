@@ -7,9 +7,9 @@ CFLAGS=-O3
 #CFLAGS=-O3 -I/usr/include/x86_64-linux-gnu
 #LFLAGS=-L/usr/lib/x86_64-linux-gnu
 
-all:	librism.a straj dhist
+all:	librism.a straj mkhist mkavgw
 
-clean:  clean_librism.a clean_straj clean_dhist
+clean:  clean_librism.a clean_straj clean_mkhist clean_mkavgw
 
 librism.a:
 	cd rism && make
@@ -17,8 +17,11 @@ librism.a:
 straj:  librism.a
 	cd straj && make
 
-dhist:  librism.a
+mkhist:  librism.a
 	cd dhist && make
+
+mkavgw:	librism.a
+	cd avgw && make
 
 clean_librism.a:
 	cd rism && make clean
@@ -26,5 +29,8 @@ clean_librism.a:
 clean_straj:
 	cd straj && make clean
 
-clean_dhist:
+clean_mkhist:
 	cd dhist && make clean
+
+clean_mkavgw:
+	cd avgw && make clean

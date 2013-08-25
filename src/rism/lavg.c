@@ -12,13 +12,12 @@ int lavg_init(int natm, lavg_t *s)
   s->natm = natm;
   s->nfun = natm * (natm - 1) / 2;
   s->nfrm = 0;
-  s->mn = malloc(4 * s->nfun * sizeof(double));
+  s->mn = (double *) calloc(4 * s->nfun, sizeof(double));
   if (!s->mn)
     return -1;
   s->mx = s->mn + s->nfun;
   s->mean = s->mx + s->nfun;
   s->std = s->mean + s->nfun;
-  memset(s->mx, 0, 3 * s->nfun * sizeof(double));
   for (i = 0; i < s->nfun; i++)
     s->mn[i] = DBL_MAX;
   return 0;
@@ -48,7 +47,7 @@ int lavg_readhdr(lavg_t *s, FILE *f)
   if (fread(s, sizeof(int), 3, f) != 3)
     return -1;
   n = 4 * s->nfun;
-  s->mn = malloc(n * sizeof(double));
+  s->mn = (double *) calloc(n, sizeof(double));
   if (!s->mn)
     return -1;
   s->mx = s->mn + s->nfun;

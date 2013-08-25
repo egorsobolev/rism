@@ -15,7 +15,7 @@ int dhist_init(int np, double dr, const lavg_t *s, dhist_t *d)
   d->nfrm = s->nfrm;
 
   m = 2 * d->nfun;
-  d->lm = (int *) malloc(m * sizeof(int));
+  d->lm = (int *) calloc(m, sizeof(int));
   if (!d->lm)
     return -1;
   d->ld = d->lm + d->nfun;
@@ -26,12 +26,11 @@ int dhist_init(int np, double dr, const lavg_t *s, dhist_t *d)
     d->ld[i] = (int) (s->mx[i] / dr + .5) - d->lm[i] + 1;
     d->n += d->ld[i];
   }
-  d->hst = (unsigned *) malloc(d->n * sizeof(unsigned));
+  d->hst = (unsigned *) calloc(d->n, sizeof(unsigned));
   if (!d->hst) {
     free(d->lm);
     return -1;
   }
-  memset(d->hst, 0, d->n * sizeof(unsigned));
 
   return 0;
 }
@@ -52,7 +51,7 @@ void dhist_update(const float *l, dhist_t *d)
   }
 }
 
-int dhist_write(const dhist_t *d, FILE *f)
+int dhist_write_hdr(const dhist_t *d, FILE *f)
 {
   int m;
   if (fwrite(&d->dr, sizeof(double), 1, f) != 1)
@@ -62,7 +61,35 @@ int dhist_write(const dhist_t *d, FILE *f)
   m = 2 * d->nfun;
   if (fwrite(d->lm, sizeof(int), m, f) != m)
     return -1;
-  if (fwrite(d->hst, sizeof(unsigned), d->n, f) != d->n)
-    return -1;
   return 0;
+}
+
+int dhist_read_hdr(dhist_t *d, FILE *f)
+{
+  int m;
+  if (fread(&d->dr, sizeof(double), 1, f) != 1)
+    return -1;
+  if (fread(&d->np, sizeof(int), 4, f) != 4)
+    return -1;
+
+  m = 2 * d->nfun;
+  d->lm = (int *) calloc(m, sizeof(int));
+  if (!d->lm)
+    return -1;
+  d->ld = d->lm + d->nfun;
+  if (fread(d->lm, sizeof(int), m, f) != m) {
+    free(d->lm);
+    return -1;
+  }
+  d->hst = (unsigned *) calloc(d->np, sizeof(unsigned));
+  if (!d->hst) {
+    free(d->lm);
+    return -1;
+  }
+  return 0;
+}
+
+int dhist_write_hist(const dhist_t *d, FILE *f) 
+{
+  return fwrite(d->hst, sizeof(unsigned), d->n, f) != d->n ? -1: 0;
 }

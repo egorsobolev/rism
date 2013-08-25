@@ -104,9 +104,9 @@ int main(int narg, char **argv)
     goto err2;
   }
   if (!feof(traj.f)) {
-    x = malloc(3 * opt_natm->ival[0] * sizeof(float));
+    x = (float *) calloc(3 * opt_natm->ival[0], sizeof(float));
     if (!x) {
-      perror("malloc");
+      perror("calloc");
       goto err2;
     }
     if (amb_read(&traj, x) == -1) {
@@ -123,9 +123,9 @@ int main(int narg, char **argv)
     perror("linit");
     goto err3;
   }
-  l = malloc(s.nfun * sizeof(float));
+  l = (float *) calloc(s.nfun, sizeof(float));
   if (!l) {
-    perror("malloc");
+    perror("calloc");
     goto err4;
   }
 

@@ -83,9 +83,9 @@ int main(int narg, char **argv)
     goto err3;
   }
 
-  l = (float *) malloc(s.nfun * sizeof(float));
+  l = (float *) calloc(s.nfun, sizeof(float));
   if (!l) {
-    perror("malloc");
+    perror("calloc");
     goto err4;
   }
 
@@ -102,8 +102,12 @@ int main(int narg, char **argv)
     perror("fopen");
     goto err5;
   }
-  if (dhist_write(&d, out)) {
-    perror("dhist_write");
+  if (dhist_write_hdr(&d, out)) {
+    perror("dhist_write_hdr");
+    goto err6;
+  }
+  if (dhist_write_hist(&d, out)) {
+    perror("dhist_write_hist");
     goto err6;
   }
   toc = walltime();
