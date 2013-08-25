@@ -90,7 +90,7 @@ void sspline_uni(int n1, const float *y, float yp1, float ypn, float *y2, float 
     y2[i] = y2[i] * y2[i+1] + u[i]; 
 }
 
-void ssplint_uni(int n, const float *ya, const float *y2a, float m, float x0, float h, float *yy)
+void ssplint_uni(int n, const float *ya, const float *y2a, int m, float x0, float h, float *yy)
 {
   float x, a, b;
   int klo, khi, i;
@@ -107,9 +107,9 @@ void ssplint_uni(int n, const float *ya, const float *y2a, float m, float x0, fl
       klo = n - 2;
     }
 
-    a = (khi - x) / h;
-    b = (x - klo) / h;
-    yy[i] = a * ya[klo] + b * ya[khi] + ((a*a*a-a) * y2a[klo] + (b*b*b-b) * y2a[khi]) * (h*h) / 6.0;
+    a = khi - x;
+    b = x - klo;
+    yy[i] = a * ya[klo] + b * ya[khi] + ((a*a*a-a) * y2a[klo] + (b*b*b-b) * y2a[khi]) / 6.0;
  
     x += h;
   }
