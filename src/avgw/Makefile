@@ -1,11 +1,4 @@
-RISMROOT=/home/egor/c-proj/rism
-
-CC=gcc
-CFLAGS=-O3
-
-#CC=icc
-#CFLAGS=-O3 -I/usr/include/x86_64-linux-gnu
-#LFLAGS=-L/usr/lib/x86_64-linux-gnu
+include ../config.mk
 
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
@@ -22,6 +15,7 @@ mkavgw:	$(OBJ) librism.a
 librism.a:
 	cd ../rism && make
 
+.PHONY:	clean
 clean:
-	rm -f $(RISMROOT)/bin/mkavgw
-	rm -f $(OBJ)
+	-rm -f $(RISMROOT)/bin/mkavgw
+	-rm -f $(OBJ)

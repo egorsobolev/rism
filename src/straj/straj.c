@@ -1,13 +1,19 @@
 #include <rism/ambtraj.h>
 #include <rism/lavg.h>
+#include <rism/error.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <argtable2.h>
 
-#include <time.h>
-#define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+#ifdef MPI
+# include "mpi.h"
+# define walltime()      MPI_Wtime()
+#else
+# include <time.h>
+# define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+#endif
 
 int main(int narg, char **argv)
 {
@@ -32,10 +38,25 @@ int main(int narg, char **argv)
   float *x, *l;
   ambtraj_t traj;
   int f0, fn, nskip;
-  FILE *out;
   double tic, toc;
   int exitcode;
+  int rank, nproc;
 
+#ifdef MPI
+  MPI_File out;
+  int blk_sz, offset, err;
+
+  MPI_Init(&narg, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  if (!rank)
+    printf("Run on %d processors\n", nproc);
+#else
+  FILE *out;
+
+  nproc = 1;
+  rank = 0;
+#endif
   tic = walltime();
   if (arg_nullcheck(argtable) != 0) {
     /* NULL entries were detected, some allocations must have failed */
@@ -83,9 +104,9 @@ int main(int narg, char **argv)
     printf("invalid value of option -s, --step=<m>\n");
     goto err1;
   }
-  f0 = opt_beg->ival[0] - 1;
+  f0 = opt_beg->ival[0] + opt_step->ival[0] * rank - 1;
   fn = opt_fin->ival[0];
-  nskip = opt_step->ival[0] - 1;
+  nskip = opt_step->ival[0] * nproc - 1;
   if (fn > 0 && f0 >= fn) {
     printf("Nothing to do. Exit.\n");
     goto err1;
@@ -95,9 +116,10 @@ int main(int narg, char **argv)
     perror("amb_open");
     goto err1;
   }
-  printf("Process trajectory\n");
-  printf("%s\n", traj.title);
-
+  if (!rank) {
+    printf("Process trajectory\n");
+    printf("%s\n", traj.title);
+  }
 
   if (amb_ignore(&traj, f0) == -1) {
     perror("amb_ignore");
@@ -120,7 +142,7 @@ int main(int narg, char **argv)
   }
  
   if (lavg_init(opt_natm->ival[0], &s)) {
-    perror("linit");
+    print_error("linit");
     goto err3;
   }
   l = (float *) calloc(s.nfun, sizeof(float));
@@ -129,19 +151,42 @@ int main(int narg, char **argv)
     goto err4;
   }
 
+#ifdef MPI
+  offset = 4 * s.nfun * sizeof(double) + 3 * sizeof(int) + s.nfun * sizeof(float) * rank;
+  blk_sz = nproc * s.nfun * sizeof(float);
+  err = MPI_File_open(MPI_COMM_WORLD, opt_out->filename[0], MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &out);
+  if (!err)
+    err = MPI_File_set_size(out, 0);
+  if (err) {
+    set_mpi_error(err);
+    print_error("MPI_File_open:");
+    goto err5;
+  }
+  /*  MPI_File_set_view(out, 4 * s.nfun * sizeof(double) + 3 * sizeof(int) + s.nfun * sizeof(float) * rank, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);*/
+#else
   out = fopen(opt_out->filename[0], "wb");
   if (!out) {
     perror("fopen");
     goto err5;
   }
   fseek(out, 4 * s.nfun * sizeof(double) + 3 * sizeof(int), SEEK_SET);
+#endif
 
   while (!feof(traj.f) && (fn <= 0 || traj.frm < fn)) {
-    lavg_update(x, l, &s);
+#ifdef MPI
+    err = MPI_File_write_at(out, offset + s.nfrm * blk_sz , l, s.nfun, MPI_FLOAT, MPI_STATUS_IGNORE);
+    if (err) {
+      set_mpi_error(err);
+      print_error("lavg_writefrm");
+      goto err6;
+    }
+#else
     if (fwrite(l, sizeof(float), s.nfun, out) != s.nfun) {
       perror("lavg_writefrm");
       goto err6;
     }
+#endif
+    lavg_update(x, l, &s);
     if (!feof(traj.f) && (fn <= 0 || (traj.frm + nskip + 1) < fn)) {
       if (amb_ignore(&traj, nskip) == -1) {
 	perror("amb_ignore");
@@ -156,20 +201,30 @@ int main(int narg, char **argv)
     }
   }
   if (s.nfrm) {
-    lavg_finish(&s);
-    if (lavg_writehdr(&s, out)) {
-      perror("lavg_writehdr");
-      goto err4;
+    if (lavg_finish(&s)) {
+      print_error("lavg_finish");
+      goto err6;
+    }
+    if (!rank) {
+      if (lavg_writehdr(&s, out)) {
+	print_error("lavg_writehdr");
+	goto err6;
+      }
     }
     toc = walltime();
-    printf("%10lf s, %d bytes, %d frames, %d pairs\n", toc - tic, (3 * s.natm + s.nfun) * sizeof(float) + 4 * s.nfun * sizeof(double), s.nfrm, s.nfun);
+    if (!rank)
+      printf("%10lf s, %d bytes, %d frames, %d pairs\n", toc - tic, (3 * s.natm + s.nfun) * sizeof(float) + 4 * s.nfun * sizeof(double), s.nfrm, s.nfun);
   } else {
     printf("Trajectory has only %d frame(s).\n", traj.frm);
     printf("Nothing was done.\n");
   }
   exitcode = EXIT_SUCCESS;
  err6:
+#ifdef MPI
+  MPI_File_close(&out);
+#else
   fclose(out);
+#endif
  err5:
   free(l);
  err4:
@@ -179,6 +234,9 @@ int main(int narg, char **argv)
  err2:
   amb_close(&traj);
  err1:
+#ifdef MPI
+  MPI_Finalize();
+#endif
   arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
   exit(exitcode);
 }

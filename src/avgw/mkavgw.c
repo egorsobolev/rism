@@ -188,7 +188,7 @@ int main(int narg, char **argv)
  err3:
   dhist_free(&d);
  err2:
-  close(in);
+  fclose(in);
  err1:
   arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
   exit(exitcode);

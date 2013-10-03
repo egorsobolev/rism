@@ -6,6 +6,10 @@
 
 #include <rism/lavg.h>
 
+#ifdef MPI
+#include <mpi.h>
+#endif
+
 int lavg_init(int natm, lavg_t *s)
 {
   int i;
@@ -13,8 +17,10 @@ int lavg_init(int natm, lavg_t *s)
   s->nfun = natm * (natm - 1) / 2;
   s->nfrm = 0;
   s->mn = (double *) calloc(4 * s->nfun, sizeof(double));
-  if (!s->mn)
+  if (!s->mn) {
+    set_std_error();
     return -1;
+  }
   s->mx = s->mn + s->nfun;
   s->mean = s->mx + s->nfun;
   s->std = s->mean + s->nfun;
@@ -28,19 +34,67 @@ void lavg_free(lavg_t *s)
   free(s->mn);
 }
 
+#ifdef MPI
+int lavg_writehdr(const lavg_t *s, MPI_File f)
+{
+  int n, err;
+  n = 4 * s->nfun;
+
+
+  err = MPI_File_write_at(f, 0 , s, 3, MPI_INT, MPI_STATUS_IGNORE);
+  if (err) goto mpi_err1;
+  err = MPI_File_write_at(f, 3 * sizeof(int), s->mn, n, MPI_DOUBLE, MPI_STATUS_IGNORE);
+  if (err) goto mpi_err1;
+
+  return 0;
+ mpi_err1:
+  set_mpi_error(err);
+  return -1;
+}
+#else
 int lavg_writehdr(const lavg_t *s, FILE *f)
 {
   int n;
   n = 4 * s->nfun;
   fseek(f, 0L, SEEK_SET);
   if (fwrite(s, sizeof(int), 3, f) != 3)
-    return -1;
+    goto err1;
   if (fwrite(s->mn, sizeof(double), n, f) != n)
-    return -1;
+    goto err1;
 
-  return 0;  
+  return 0;
+ err1:
+  set_std_error();
+  return -1;
 }
+#endif
 
+#ifdef MPI
+int lavg_readhdr(lavg_t *s, MPI_File f)
+{
+  int n, err;
+  err = MPI_File_read_all(f, s, 3, MPI_INT, MPI_STATUS_IGNORE);
+  if (err)
+    goto mpi_err1;
+
+  n = 4 * s->nfun;
+  s->mn = (double *) calloc(n, sizeof(double));
+  if (!s->mn)
+    return -1;
+  s->mx = s->mn + s->nfun;
+  s->mean = s->mx + s->nfun;
+  s->std = s->mean + s->nfun;
+
+  err = MPI_File_read_all(f, s->mn, n, MPI_DOUBLE, MPI_STATUS_IGNORE);
+  if (err)
+    goto mpi_err1;
+
+  return 0;
+ mpi_err1:
+  set_mpi_error(err);  
+  return -1;
+}
+#else
 int lavg_readhdr(lavg_t *s, FILE *f)
 {
   int n;
@@ -57,6 +111,7 @@ int lavg_readhdr(lavg_t *s, FILE *f)
     return -1;
   return 0;
 }
+#endif
 
 void lavg_update(const float *x, float *l, lavg_t *s)
 {
@@ -84,16 +139,41 @@ void lavg_update(const float *x, float *l, lavg_t *s)
   s->nfrm++;
 }
 
-void lavg_finish(lavg_t *s)
+int lavg_finish(lavg_t *s)
 {
-  int i;
+  int i, nfrm;
   double m;
+
+#ifdef MPI
+  int rank, err;
+  MPI_Allreduce(MPI_IN_PLACE, &s->nfrm, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#endif
   if (!s->nfrm)
-    return;
+    return 0;
+
+#ifdef MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank) {
+    err = MPI_Reduce(s->mn, NULL, s->nfun, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    if (err) goto mpi_err1;
+    err = MPI_Reduce(s->mx, NULL, s->nfun, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (err) goto mpi_err1;
+    err = MPI_Reduce(s->mean, NULL, 2 * s->nfun, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (err) goto mpi_err1;
+    return 0;
+  } else {
+    err = MPI_Reduce(MPI_IN_PLACE, s->mn, s->nfun, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    if (err) goto mpi_err1;
+    err = MPI_Reduce(MPI_IN_PLACE, s->mx, s->nfun, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (err) goto mpi_err1;
+    err = MPI_Reduce(MPI_IN_PLACE, s->mean, 2 * s->nfun, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (err) goto mpi_err1;
+  }
+#endif
 
   if (s->nfrm == 1) {
     memset(s->std, 0, s->nfun * sizeof(double));
-    return;
+    return 0;
   }
 
   m = 1.0 / (s->nfrm - 1);
@@ -101,4 +181,10 @@ void lavg_finish(lavg_t *s)
     s->mean[i] /= s->nfrm;
     s->std[i] = sqrt(m * (s->std[i] - s->nfrm * s->mean[i] * s->mean[i]));
   }
+  return 0;
+#ifdef MPI
+ mpi_err1:
+  set_mpi_error(err);
+  return -1;
+#endif
 }

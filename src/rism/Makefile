@@ -1,23 +1,38 @@
-RISMROOT=/home/egor/c-proj/rism
-
-CC=gcc
-CFLAGS=-O3
-
-#CC=icc
-#CFLAGS=-O3 -I/usr/include/x86_64-linux-gnu
-#LFLAGS=-L/usr/lib/x86_64-linux-gnu
+include ../config.mk
 
 SRC=$(wildcard *.c)
-OBJ=$(SRC:.c=.o)
+OBJMPI = $(addprefix .o.mpi/,$(SRC:.c=.o))
+OBJSRL = $(addprefix .o.serial/,$(SRC:.c=.o))
 
-%.o:	%.c
+all:    serial mpi
+
+serial: librism.a
+
+mpi:    librism-mpi.a
+
+.o.serial/%.o:  %.c
 	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
-librism.a:	$(OBJ)
-	ar -r $(RISMROOT)/lib/$@ $(OBJ)
+.o.mpi/%.o:     %.c
+	$(CC) $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
-all:    librism.a
+$(OBJMPI):      | .o.mpi
 
+$(OBJSRL):      | .o.serial
+
+.o.mpi:
+	mkdir .o.mpi
+
+.o.serial:
+	mkdir .o.serial
+
+librism.a:	$(OBJSRL)
+	ar -r $(RISMROOT)/lib/$@ $(OBJSRL)
+
+librism-mpi.a:	$(OBJMPI)
+	ar -r $(RISMROOT)/lib/$@ $(OBJMPI)
+
+.PHONY:	clean
 clean:
-	rm -f $(RISMROOT)/lib/librism.a
-	rm -f $(OBJ)
+	-rm -r $(OBJMPI) $(OBJSRL) $(RISMROOT)/lib/librism.a $(RISMROOT)/lib/librism-mpi.a
+	-rmdir .o.mpi .o.serial

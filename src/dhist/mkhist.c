@@ -6,8 +6,13 @@
 
 #include <argtable2.h>
 
-#include <time.h>
-#define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+#ifdef MPI
+# include "mpi.h"
+# define walltime()      MPI_Wtime()
+#else
+# include <time.h>
+# define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+#endif
 
 int main(int narg, char **argv)
 {
@@ -26,12 +31,28 @@ int main(int narg, char **argv)
     end = arg_end(20),
   };
   int nerrors;
-  FILE *in, *out;
   double tic, toc;
-  int exitcode, i;
+  int exitcode;
   lavg_t s;
   dhist_t d;
   float *l;
+  int rank, nproc;
+
+#ifdef MPI
+  int err;
+  MPI_File in, out;
+
+  MPI_Init(&narg, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  if (!rank)
+    printf("Run on %d processors\n", nproc);
+#else
+  FILE *in, *out;
+
+  nproc = 1;
+  rank = 0;
+#endif
 
   tic = walltime();
   if (arg_nullcheck(argtable) != 0) {
@@ -68,63 +89,83 @@ int main(int narg, char **argv)
     goto err1;
   }
 
+#ifdef MPI
+  err = MPI_File_open(MPI_COMM_WORLD, opt_in->filename[0], MPI_MODE_RDONLY , MPI_INFO_NULL, &in);
+  if (err) {
+    set_mpi_error(err);
+    print_error("MPI_File_open:");
+    goto err1;
+  }  
+#else
   in = fopen(opt_in->filename[0], "rb");
   if (!in) {
     perror("fopen");
     goto err1;
   }
+#endif
   if (lavg_readhdr(&s, in)) {
-    perror("lavg_readhdr");
+    print_error("lavg_readhdr");
     goto err2;
   }
 
-  if (dhist_init(opt_np->ival[0], opt_dr->dval[0], &s, &d)) {
+  if (dhist_init(opt_np->ival[0], opt_dr->dval[0], &s, nproc, rank, &d)) {
     perror("dhist_init");
     goto err3;
   }
-
-  l = (float *) calloc(s.nfun, sizeof(float));
-  if (!l) {
-    perror("calloc");
-    goto err4;
+  if (dhist_process_l(&d, s.nfrm, in)) {
+    print_error("dhist_process_l");
+    goto err3;
   }
-
-  for (i = 0; i < s.nfrm; i++) {
-    if (fread(l, sizeof(float), s.nfun, in) != s.nfun) {
-      perror("fread");
-      goto err5;
-    }
-    dhist_update(l, &d);
+#ifdef MPI
+  err = MPI_File_open(MPI_COMM_WORLD, opt_out->filename[0], MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &out);
+  if (!err)
+    err = MPI_File_set_size(out, 0);
+  if (err) {
+    set_mpi_error(err);
+    print_error("MPI_File_open:");
+    goto err5;
   }
-
+#else
   out = fopen(opt_out->filename[0], "wb");
   if (!out) {
     perror("fopen");
     goto err5;
   }
-  if (dhist_write_hdr(&d, out)) {
-    perror("dhist_write_hdr");
-    goto err6;
-  }
+#endif
+  if (!rank)
+    if (dhist_write_hdr(&d, out)) {
+      print_error("dhist_write_hdr");
+      goto err6;
+    }
   if (dhist_write_hist(&d, out)) {
-    perror("dhist_write_hist");
+    print_error("dhist_write_hist");
     goto err6;
   }
   toc = walltime();
-  printf("%10lf s, %d bytes, %d numbers\n", toc - tic, s.nfun * sizeof(float) + 2 * d.nfun * sizeof(int) + d.n * sizeof(unsigned), d.n);
+  if (!rank)
+    printf("%10lf s, %d bytes, %d numbers\n", toc - tic, s.nfun * sizeof(float) + 2 * d.nfun * sizeof(int) + d.n * sizeof(unsigned), d.n);
   exitcode = EXIT_SUCCESS;
 
  err6:
+#ifdef MPI
+  MPI_File_close(&out);
+#else
   fclose(out);
+#endif
  err5:
-  free(l);
- err4:
   dhist_free(&d);
  err3:
   lavg_free(&s);
  err2:
+#ifdef MPI
+  MPI_File_close(&in);
+#else
   fclose(in);
+#endif
  err1:
+#ifdef MPI
+  MPI_Finalize();
+#endif
   arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
   exit(exitcode);
 }
