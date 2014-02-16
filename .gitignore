@@ -3,4 +3,5 @@
 *.a
 *.o
 bin/
+lib/
 include/argtable2.h

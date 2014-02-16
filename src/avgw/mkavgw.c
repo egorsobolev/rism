@@ -7,11 +7,39 @@
 
 #include <argtable2.h>
 
-#include <time.h>
-#define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+#ifdef MPI
+# include "mpi.h"
+# define walltime()      MPI_Wtime()
+#else
+# include <time.h>
+# define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+#endif
 
 #define GRID_SHAPES_MAX 16
 #include "avgw.h"
+
+int ncycles(int nf, int ne, int np)
+{
+  int n, r, nsess;
+  if (np > nf)
+    return -1;
+  n = ne * np;
+  nsess = nf / n;
+  r = nf - nsess * n;
+  /* если остаток больше числа процессоров, то просто берем на один блок больше */
+  /* иначе смотрим сколько блоков нужно, если размер блока уменьшить на 1 */
+  if (r >= np) {
+    nsess++;
+  } else if (r) {
+    nsess = nf / (n - np);
+    r = nf - nsess * n;
+    /* если числа блоков не хватает даже при использовании их исходного размера,
+     * используем на один блок больше */
+    if (r > 0)
+      nsess++;
+  }
+  return nsess;
+}
 
 int main(int narg, char **argv)
 {
@@ -31,7 +59,6 @@ int main(int narg, char **argv)
     end = arg_end(20),
   };
   int nerrors;
-  FILE *in;
   double tic, toc;
   int exitcode;
   avgw_shapes_t s;
@@ -39,9 +66,29 @@ int main(int narg, char **argv)
   avgw_cutparam_t awcut[GRID_SHAPES_MAX];
   sgrid_t g;
   dhist_t d;
-  int i, j;
+  int i, j, k;
   avgw_func_t f;
-  float *fcut;
+  /*  float *fcut; */
+  avgw_outbuf_t cut[GRID_SHAPES_MAX];
+  unsigned long pos;
+  int nc, ns, cpos, bpos, blen, nb, r, hlen;
+  int nproc, rank;
+
+#ifdef MPI
+  int err;
+  MPI_File in;
+
+  MPI_Init(&narg, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  if (!rank)
+    printf("Run on %d processors\n", nproc);
+#else
+  FILE *in;
+
+  nproc = 1;
+  rank = 0;
+#endif
 
   tic = walltime();
   if (arg_nullcheck(argtable) != 0) {
@@ -76,14 +123,23 @@ int main(int narg, char **argv)
     goto err1;
   }
 
-
+#ifdef MPI
+  err = MPI_File_open(MPI_COMM_WORLD, opt_in->filename[0], MPI_MODE_RDONLY , MPI_INFO_NULL, &in);
+  if (err) {
+    set_mpi_error(err);
+    print_error("MPI_File_open:");
+    goto err1;
+  }  
+#else
   in = fopen(opt_in->filename[0], "rb");
   if (!in) {
     perror("fopen");
     goto err1;
   }
-  if (dhist_read_hdr(&d, in)) {
-    perror("dhist_read_hdr");
+#endif
+
+  if (dhist_read_hdr(&d, AVGW_BUFSIZE, in)) {
+    print_error("dhist_read_hdr");
     goto err2;
   }
   
@@ -109,16 +165,17 @@ int main(int narg, char **argv)
     }
     s.o[j] = i;
   }
-  printf("Hist: np = %d, dR = %g (A), L = %g (A)%s\n", g.np, g.dr, g.np * g.dr, s.interp ? ", int": "");
-  avgw_shapes_print(&s);
-
+  if (!rank) {
+    printf("Hist: np = %d, dR = %g (A), L = %g (A)%s\n", g.np, g.dr, g.np * g.dr, s.interp ? ", int": "");
+    avgw_shapes_print(&s);
+  }
+   
   if (avgw_func_init(&g, &f)) {
     perror("avgw_func_init");
     goto err4;
   }
-  fcut = (float *) calloc(g.np, sizeof(float));
-  if (!fcut) {
-    perror("calloc");
+  if (avgw_outbuf_init(s.n, s.p, cut)) {
+    perror("avgw_outbuf_init");
     goto err5;
   }
   if (avgw_mtx_init(s.n, s.p, d.nfun, W)) {
@@ -130,33 +187,151 @@ int main(int narg, char **argv)
     goto err7;
   }
   for (i = 0; i < s.n; i++) {
-    if (fseek(s.f[i], (W[i].nfun + 2) * sizeof(int) + sizeof(float), SEEK_SET)) {
+#ifdef MPI
+    err = MPI_File_seek_shared(s.f[i], (2 + d.nfun) * sizeof(int) + sizeof(float), MPI_SEEK_SET);
+    if (err) {
+      set_mpi_error(err);
+      print_error("MPI_File_seek_shared:");
+      goto err8;
+    }
+#else
+    if (fseek(s.f[i], (2 + d.nfun) * sizeof(int) + sizeof(float), SEEK_SET)) {
       perror("fseek");
       goto err8;
     }
+#endif
   }
+#ifdef MPI
+  err = MPI_File_seek_shared(in, sizeof(double) + (4 + 2 * d.nfun) * sizeof(int), MPI_SEEK_SET);
+  if (err) {
+    set_mpi_error(err);
+    print_error("MPI_File_seek_shared:");
+    goto err8;
+  }
+#endif
+  nc = ncycles(d.nfun, AVGW_BUFSIZE, nproc);
+  cpos = 0;
+  for (j = 0; j < nc; j++) {
+    ns = d.nfun / nc;
+    r = d.nfun - ns * nc;
+    ns += (j < r);
 
-  for (j = 0; j < d.nfun; j++) {
-    if (fread(d.hst, sizeof(unsigned), d.ld[j], in) != d.ld[j]) {
+    blen = ns / nproc;
+    r = ns - blen * nproc;
+    bpos = cpos + blen * rank + (rank < r ? rank : r);
+    blen += (rank < r);
+
+    hlen = d.ld[bpos];
+    for (i = 1; i < blen; i++)
+      hlen += d.ld[bpos + i];
+
+#ifdef MPI
+    err = MPI_File_read_ordered(in, d.hst, hlen, MPI_UNSIGNED, MPI_STATUS_IGNORE);
+    if (err) {
+      set_mpi_error(err);
+      print_error("MPI_File_read_ordered:");
+      goto err8;
+    }
+#else
+    if (fread(d.hst, sizeof(unsigned), hlen, in) != hlen) {
       perror("fread");
       goto err8;
     }
-    avgw_hist2aw(&g, d.ld[j], d.lm[j], d.nfrm, d.hst, &f);
-    avgw_itail(&g, &f, &s, awcut);
-    if (s.interp)
-      sspline_uni(f.np, f.s, 0.0, 0.0, f.s2, f.u);
+#endif
+    r = 0;
+    for (k = 0; k < blen; k++) {
+      avgw_hist2aw(&g, d.ld[bpos], d.lm[bpos], d.nfrm, d.hst + r, &f);
+      avgw_itail(&g, &f, &s, awcut);
+      if (s.interp)
+	sspline_uni(f.np, f.s, 0.0, 0.0, f.s2, f.u);
+
+      for (i = 0; i < s.n; i++) {
+	W[i].Icut[bpos] = awcut[i].Icut;
+	W[i].npcut[bpos] = awcut[i].npcut;
+	W[i].nz[bpos] = awcut[i].nz;
+
+	avgw_reshape(&g, &f, &s.p[i], &awcut[i], cut[i].cur);
+	cut[i].cur = cut[i].cur + awcut[i].npcut;
+      }
+      r += d.ld[bpos];
+      bpos++;
+    }
 
     for (i = 0; i < s.n; i++) {
-      W[i].Icut[j] = awcut[i].Icut;
-      W[i].npcut[j] = awcut[i].npcut;
-      W[i].nz[j] = awcut[i].nz;
-      avgw_reshape(&g, &f, &s.p[i], &awcut[i], fcut);
-      if (fwrite(fcut, sizeof(float), awcut[i].npcut, s.f[i]) != awcut[i].npcut) {
+      nb = cut[i].cur - cut[i].mem;
+#ifdef MPI
+      err = MPI_File_write_ordered(s.f[i], cut[i].mem, nb, MPI_FLOAT, MPI_STATUS_IGNORE);
+      if (err) {
+	set_mpi_error(err);
+	print_error("MPI_File_write_ordered:");
+	goto err8;
+      }
+#else
+      if (fwrite(cut[i].mem, sizeof(float), nb, s.f[i]) != nb) {
 	perror("fwrite");
 	goto err8;
       }
+#endif
+      cut[i].cur = cut[i].mem;
+    }
+    cpos += ns;
+  }
+
+  for (i = 0; i < s.n; i++) {
+#ifdef MPI
+    err = MPI_File_seek_shared(s.f[i], 2 * sizeof(int) + sizeof(float), MPI_SEEK_SET);
+    if (err) {
+      set_mpi_error(err);
+      print_error("MPI_File_seek_shared:");
+      goto err8;
+    }
+#else
+    if (fseek(s.f[i], 2 * sizeof(int) + sizeof(float), SEEK_SET)) {
+      perror("fseek");
+      goto err8;
+    }
+#endif
+  }
+
+#ifdef MPI
+  cpos = 0;
+  for (j = 0; j < nc; j++) {
+    ns = d.nfun / nc;
+    r = d.nfun - ns * nc;
+    ns += (j < r);
+
+    blen = ns / nproc;
+    r = ns - blen * nproc;
+    bpos = cpos + blen * rank + (rank < r ? rank : r);
+    blen += (rank < r);
+
+    for (i = 0; i < s.n; i++) {
+      err = MPI_File_write_ordered(s.f[i], W[i].npcut + bpos, blen, MPI_INT, MPI_STATUS_IGNORE);
+      if (err) {
+	set_mpi_error(err);
+	print_error("MPI_File_write_ordered:");
+	goto err8;
+      }
+    }
+    cpos += ns;
+  }
+#else
+  for (i = 0; i < s.n; i++) {
+    if (fwrite(W[i].npcut, sizeof(int), d.nfun, s.f[i]) != d.nfun) {
+      perror("fwrite");
+      goto err8;
     }
   }
+#endif
+
+  for (i = rank; i < s.n; i += nproc) {
+    if (avgw_write_hdr(&W[i], s.f[i])) {
+      print_error("avgw_write_hdr:");
+      goto err8;
+    }
+  }
+
+  /*
   for (i = 0; i < s.n; i++) {
     if (avgw_write_info(&W[i], s.f[i])) {
       perror("avgw_write_hdr");
@@ -171,16 +346,18 @@ int main(int narg, char **argv)
       goto err8;
     }
   }
-
+  */
   toc = walltime();
-  printf("Time: %lg s\n", toc - tic);
+  if (!rank)
+    printf("Time: %lg s\n", toc - tic);
   exitcode = EXIT_SUCCESS;
  err8:
   avgw_shapes_close(s.n, s.f);
  err7:
-  avgw_mtx_free(s.n, W);
+  avgw_mtx_free(W);
  err6:
-  free(fcut);
+  avgw_outbuf_free(cut);
+  /* free(fcut); */
  err5:
   avgw_func_free(&f);
  err4:
@@ -188,8 +365,15 @@ int main(int narg, char **argv)
  err3:
   dhist_free(&d);
  err2:
+#ifdef MPI
+  MPI_File_close(&in);
+#else
   fclose(in);
+#endif
  err1:
+#ifdef MPI
+  MPI_Finalize();
+#endif
   arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
   exit(exitcode);
 }

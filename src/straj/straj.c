@@ -44,7 +44,8 @@ int main(int narg, char **argv)
 
 #ifdef MPI
   MPI_File out;
-  int blk_sz, offset, err;
+  int err;
+  long pos, blen;
 
   MPI_Init(&narg, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -120,7 +121,6 @@ int main(int narg, char **argv)
     printf("Process trajectory\n");
     printf("%s\n", traj.title);
   }
-
   if (amb_ignore(&traj, f0) == -1) {
     perror("amb_ignore");
     goto err2;
@@ -133,7 +133,7 @@ int main(int narg, char **argv)
     }
     if (amb_read(&traj, x) == -1) {
       perror("amb_read");
-      goto err3;
+      goto err6;
     }
   } else {
     printf("Trajectory has only %d frame(s).\n", traj.frm);
@@ -152,8 +152,8 @@ int main(int narg, char **argv)
   }
 
 #ifdef MPI
-  offset = 4 * s.nfun * sizeof(double) + 3 * sizeof(int) + s.nfun * sizeof(float) * rank;
-  blk_sz = nproc * s.nfun * sizeof(float);
+  pos = 4 * s.nfun * sizeof(double) + 3 * sizeof(int) + s.nfun * sizeof(float) * rank;
+  blen = nproc * s.nfun * sizeof(float);
   err = MPI_File_open(MPI_COMM_WORLD, opt_out->filename[0], MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &out);
   if (!err)
     err = MPI_File_set_size(out, 0);
@@ -171,22 +171,22 @@ int main(int narg, char **argv)
   }
   fseek(out, 4 * s.nfun * sizeof(double) + 3 * sizeof(int), SEEK_SET);
 #endif
-
   while (!feof(traj.f) && (fn <= 0 || traj.frm < fn)) {
+    lavg_update(x, l, &s);
 #ifdef MPI
-    err = MPI_File_write_at(out, offset + s.nfrm * blk_sz , l, s.nfun, MPI_FLOAT, MPI_STATUS_IGNORE);
+    err = MPI_File_write_at(out, pos, l, s.nfun, MPI_FLOAT, MPI_STATUS_IGNORE);
     if (err) {
       set_mpi_error(err);
       print_error("lavg_writefrm");
       goto err6;
     }
+    pos += blen;
 #else
     if (fwrite(l, sizeof(float), s.nfun, out) != s.nfun) {
       perror("lavg_writefrm");
       goto err6;
     }
 #endif
-    lavg_update(x, l, &s);
     if (!feof(traj.f) && (fn <= 0 || (traj.frm + nskip + 1) < fn)) {
       if (amb_ignore(&traj, nskip) == -1) {
 	perror("amb_ignore");

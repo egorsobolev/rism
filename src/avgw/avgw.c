@@ -32,43 +32,104 @@ void avgw_func_free(avgw_func_t *f)
 
 int avgw_mtx_init(int n, gridparam_t *p, int nfun, avgw_mtx_t *W)
 {
-  int nb, i;
+  int nb, i, *m;
   nb = sizeof(float) + 2 * sizeof(int);
+  m = (int *) calloc(nfun * n, nb);
+  if (!m)
+    return -1;
   for (i = 0; i < n; i++) {
-    W[i].npcut = (int *) calloc(nfun, nb);
-    if (!W[i].npcut)
-      break;
+    W[i].npcut = m;
     W[i].nz = W[i].npcut + nfun;
     W[i].Icut = (float *) (W[i].nz + nfun);
+    m = (int *) (W[i].Icut + nfun); 
     W[i].nfun = nfun;
     W[i].dr = p[i].dr;
     W[i].np = p[i].np;
   }
-  if (i == n)
-    return 0;
-  for (; i >= 0; i--)
-    free(W[i].npcut);
-}
-
-void avgw_mtx_free(int n, avgw_mtx_t *W)
-{
-  int i;
-  for (i = 0; i < n; i++)
-    free(W[i].npcut);
-}
-
-int avgw_write_hdr(avgw_mtx_t *W, FILE *f)
-{
-  if (fwrite(&W->np, sizeof(int), 1, f) != 1)
-    return -1;
-  if (fwrite(&W->dr, sizeof(float), 1, f) != 1)
-    return -1;
-  if (fwrite(&W->nfun, sizeof(int), 1, f) != 1)
-    return -1;
-  if (fwrite(W->npcut, sizeof(int), W->nfun, f) != W->nfun)
-    return -1;
   return 0;
 }
+
+void avgw_mtx_free(avgw_mtx_t *W)
+{
+  free(W[0].npcut);
+}
+
+int avgw_outbuf_init(int n, const gridparam_t *p, avgw_outbuf_t *b)
+{
+  int i, np;
+  float *m;
+  np = 0;
+  for (i = 0; i < n; i++)
+    np += p[i].np * AVGW_BUFSIZE;
+  m = calloc(np, sizeof(float));
+  if (!m)
+    return -1;
+
+  for (i = 0; i < n; i++) {
+    b[i].mem = b[i].cur = m;
+    m += p[i].np * AVGW_BUFSIZE;
+      /*
+	b[i].n = 0;*/
+  }
+  return 0;
+}
+
+int avgw_outbuf_free(avgw_outbuf_t *b)
+{
+  free(b[0].mem);
+}
+
+#ifdef MPI
+int avgw_write_hdr(avgw_mtx_t *W, MPI_File f)
+{
+  static MPI_Datatype tp[] = {MPI_INT, MPI_FLOAT, MPI_INT};
+  static int len[] = {1, 1, 1};
+  static MPI_Aint disp[] = {offsetof(avgw_mtx_t, np), offsetof(avgw_mtx_t, dr), offsetof(avgw_mtx_t, nfun)};
+  MPI_Datatype hdrtype;
+  int err;
+
+  err = MPI_Type_create_struct(3, len, disp, tp, &hdrtype);
+  if (err)
+    goto err1;
+  err = MPI_Type_commit(&hdrtype);
+  if (err)
+    goto err1;
+  err = MPI_File_seek(f, 0, MPI_SEEK_SET);
+  if (err)
+    goto err1;
+  err = MPI_File_write(f, W, 1, hdrtype, MPI_STATUS_IGNORE);
+  if (err)
+    goto err1;
+  err = MPI_Type_free(&hdrtype);
+  if (err)
+    goto err1;
+  return 0;
+
+ err1:
+  set_mpi_error(err);
+  return -1;
+}
+#else
+int avgw_write_hdr(avgw_mtx_t *W, FILE *f)
+{
+  if (fseek(f, 0, SEEK_SET))
+    goto err1;
+  if (fwrite(&W->np, sizeof(int), 1, f) != 1)
+    goto err1;
+  if (fwrite(&W->dr, sizeof(float), 1, f) != 1)
+    goto err1;
+  if (fwrite(&W->nfun, sizeof(int), 1, f) != 1)
+    goto err1;
+  /*
+  if (fwrite(W->npcut, sizeof(int), W->nfun, f) != W->nfun)
+    return -1;
+  */
+  return 0;
+ err1:
+  set_std_error();
+  return -1;
+}
+#endif
 
 int avgw_write_info(avgw_mtx_t *W, FILE *f)
 {

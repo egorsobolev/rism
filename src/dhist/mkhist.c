@@ -103,19 +103,22 @@ int main(int narg, char **argv)
     goto err1;
   }
 #endif
+/*  printf("opened\n");*/
   if (lavg_readhdr(&s, in)) {
     print_error("lavg_readhdr");
     goto err2;
   }
-
+/*  printf("header read\n");*/
   if (dhist_init(opt_np->ival[0], opt_dr->dval[0], &s, nproc, rank, &d)) {
     perror("dhist_init");
     goto err3;
   }
+/*  printf("dhist created\n");*/
   if (dhist_process_l(&d, s.nfrm, in)) {
     print_error("dhist_process_l");
     goto err3;
   }
+/*  printf("processed\n");*/
 #ifdef MPI
   err = MPI_File_open(MPI_COMM_WORLD, opt_out->filename[0], MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &out);
   if (!err)

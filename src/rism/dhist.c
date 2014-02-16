@@ -73,6 +73,7 @@ void dhist_update(const float *l, dhist_t *d)
   int k, i;
   k = 0;
   for (i = 0; i < d->fn; i++) {
+/*    printf("l[%d] = %f, i = %d, lm = %d\n", i, l[i],(int) (l[i] / d->dr + 0.5) - d->lm[i],d->lm[i]);*/
     d->hst[k + (int) (l[i] / d->dr + 0.5) - d->lm[i]]++;
     k += d->ld[i];
   }
@@ -163,30 +164,89 @@ int dhist_write_hdr(dhist_t *d, FILE *f)
 }
 #endif
 
-int dhist_read_hdr(dhist_t *d, FILE *f)
+#ifdef MPI
+int dhist_read_hdr(dhist_t *d, int n, MPI_File f)
 {
-  int m;
-  if (fread(&d->dr, sizeof(double), 1, f) != 1)
-    return -1;
-  if (fread(&d->np, sizeof(int), 4, f) != 4)
-    return -1;
+  int m, l, i, err;
+  err = MPI_File_read_all(f, &d->dr, 1, MPI_DOUBLE, MPI_STATUS_IGNORE);
+  if (err)
+    goto err1;
+  err = MPI_File_read_all(f, &d->np, 4, MPI_INT, MPI_STATUS_IGNORE);
+  if (err)
+    goto err1;
 
   m = 2 * d->nfun;
   d->lm = (int *) calloc(m, sizeof(int));
   if (!d->lm)
-    return -1;
+    goto err2;
+  d->ld = d->lm + d->nfun;
+
+
+  err = MPI_File_read_all(f, d->lm, m, MPI_INT, MPI_STATUS_IGNORE);
+  if (err)
+    goto err1;
+  
+  m = 0;
+  for (i = 0; i < n; i++)
+    m += d->ld[i];
+  l = m;
+  for (; i < d->nfun; i++) {
+    m += d->ld[i] - d->ld[i - n];
+    if (m > l) l = m;
+  }
+   
+  d->hst = (unsigned *) calloc(l, sizeof(unsigned));
+  if (!d->hst) {
+    free(d->lm);
+    goto err2;
+  }
+  return 0;
+ err1:
+  set_mpi_error(err); 
+  return -1;
+ err2:
+  set_std_error();
+  return -1;
+}
+#else
+int dhist_read_hdr(dhist_t *d, int n, FILE *f)
+{
+  int m, l, i;
+  if (fread(&d->dr, sizeof(double), 1, f) != 1)
+    goto err1;
+  if (fread(&d->np, sizeof(int), 4, f) != 4)
+    goto err1;
+
+  m = 2 * d->nfun;
+  d->lm = (int *) calloc(m, sizeof(int));
+  if (!d->lm)
+    goto err1;
   d->ld = d->lm + d->nfun;
   if (fread(d->lm, sizeof(int), m, f) != m) {
     free(d->lm);
-    return -1;
+    goto err1;
   }
-  d->hst = (unsigned *) calloc(d->np, sizeof(unsigned));
+   
+  m = 0;
+  for (i = 0; i < n; i++)
+    m += d->ld[i];
+  l = m;
+  for (; i < d->nfun; i++) {
+    m += d->ld[i] - d->ld[i - n];
+    if (m > l) l = m;
+  }
+   
+  d->hst = (unsigned *) calloc(l, sizeof(unsigned));
   if (!d->hst) {
     free(d->lm);
-    return -1;
+    goto err1;
   }
   return 0;
+ err1:
+  set_std_error();
+  return -1;
 }
+#endif
 
 #ifdef MPI
 int dhist_write_hist(dhist_t *d, MPI_File f)
