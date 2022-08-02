@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #ifdef MPI
-#include <mpi.h>
+#include <mpi/mpi.h>
 #endif
 
 int dhist_init(int np, double dr, const lavg_t *s, int n, int p, dhist_t *d)

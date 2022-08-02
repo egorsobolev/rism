@@ -7,8 +7,8 @@ CFLAGS=-O3
 #CFLAGS=-O3 -I/usr/include/x86_64-linux-gnu
 #LFLAGS=-L/usr/lib/x86_64-linux-gnu
 
-# IMPB openmpi
-MPICFLAGS = -I/usr/lib/openmpi/include -DMPI
-MPILFLAGS = -L/usr/lib/openmpi/lib -lmpi -lopen-rte -lopen-pal -ldl \
-    -Wl,--export-dynamic -lnsl -lutil -ldl
+# MPI
+MPICC=mpicc
+MPICFLAGS=-DMPI
+MPILFLAGS=
 

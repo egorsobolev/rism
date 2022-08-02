@@ -14,7 +14,7 @@ mpi:    librism-mpi.a
 	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(CC) $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 

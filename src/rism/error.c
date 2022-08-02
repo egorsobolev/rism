@@ -6,7 +6,7 @@ static int errcode;
 static char *errstr;
 
 #ifdef MPI
-#include <mpi.h>
+#include <mpi/mpi.h>
 static char mpierr[MPI_MAX_ERROR_STRING];
 
 void set_mpi_error(int e)

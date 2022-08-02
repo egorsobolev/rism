@@ -14,7 +14,7 @@ mpi:    awrism.MPI
 	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(CC) $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 
@@ -31,7 +31,7 @@ awrism:  $(OBJSRL) librism.a
          -lfftw3f -lfftw3 -lblas -lm -o $(RISMROOT)/bin/$@
 
 awrism.MPI:      $(OBJMPI) librism-mpi.a
-	$(CC) $(LFLAGS) $(MPILFLAGS) -L$(RISMROOT)/lib $(OBJMPI) \
+	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L$(RISMROOT)/lib $(OBJMPI) \
          -lrism-mpi -largtable2 -lfftw3f -lfftw3 -lblas -lm \
          -o $(RISMROOT)/bin/$@
 

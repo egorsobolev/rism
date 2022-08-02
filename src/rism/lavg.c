@@ -7,7 +7,7 @@
 #include <rism/lavg.h>
 
 #ifdef MPI
-#include <mpi.h>
+#include <mpi/mpi.h>
 #endif
 
 int lavg_init(int natm, lavg_t *s)
