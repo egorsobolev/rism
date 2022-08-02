@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cblas.h>
 
 int avgw_read(const char *fn, avgw_t *w, int nge, int reduc)
 {

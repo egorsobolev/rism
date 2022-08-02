@@ -1,9 +1,10 @@
-#include <stdlib.h>
-#include <stdio.h>
-
 #include <rism/dhist.h>
 #include <rism/grid.h>
 #include <rism/interp.h>
+#include <rism/error.h>
+
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <argtable2.h>
 

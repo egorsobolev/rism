@@ -1,10 +1,11 @@
+#include <rism/lavg.h>
+#include <rism/error.h>
+
 #include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
-
-#include <rism/lavg.h>
 
 #ifdef MPI
 #include <mpi/mpi.h>

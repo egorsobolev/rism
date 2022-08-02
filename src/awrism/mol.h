@@ -3,7 +3,7 @@
 
 struct MolForceFiled {
   double *s, *q, *e;
-} ff;
+};
 typedef struct MolForceFiled molff_t;
 
 

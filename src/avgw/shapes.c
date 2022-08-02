@@ -1,7 +1,8 @@
+#include "shapes.h"
+
 #include <rism/grid.h>
 #include <rism/strtools.h>
-
-#include "shapes.h"
+#include <rism/error.h>
 
 #include <stdlib.h>
 #include <stdio.h>

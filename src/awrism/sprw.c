@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <cblas.h>
 
 int sprw_mk(mol_t *m, double prec, double r, int ngl, int ngs, double dk, sprw_t *w)
 {

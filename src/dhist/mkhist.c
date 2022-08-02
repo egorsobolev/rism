@@ -1,8 +1,9 @@
-#include <stdlib.h>
-#include <stdio.h>
-
 #include <rism/lavg.h>
 #include <rism/dhist.h>
+#include <rism/error.h>
+
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <argtable2.h>
 
