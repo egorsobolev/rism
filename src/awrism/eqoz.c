@@ -66,16 +66,16 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
     k = p->puv.atyp[u] * p->natv * p->puv.ngrid;
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < n; i++)
-	g->data[i] = (r[l + i] - p->puv.asympr[k + i]) * (i + 1);
+        g->data[i] = (r[l + i] - p->puv.asympr[k + i]) * (i + 1);
       for (; i < g->n; i++)
-	g->data[i] = 0.0;
+        g->data[i] = 0.0;
 
       fftw_execute(g->plan);
 
       for (i = 0; i < n; i++)
-	r[l + i] = (g->f * g->data[i] + p->puv.asympk[k + i]) * p->v.symc[v];
+        r[l + i] = (g->f * g->data[i] + p->puv.asympk[k + i]) * p->v.symc[v];
       for (; i < g->n; i++)
-	r[l + i] = 0.0;
+        r[l + i] = 0.0;
 
       l += g->n;
       k += p->puv.ngrid;
@@ -95,13 +95,13 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
       l = v * g->n;
       k = j * g->n;
       for (u = 0; u < p->natu; u++) {
-	for (i = 0; i < n; i++) {
-	  a = p->v.xvv[i0 + i];
-	  r[l + i] += a * d[k + i];
-	  r[k + i] += a * d[l + i];
-	}
-	l += incu;
-	k += incu;
+        for (i = 0; i < n; i++) {
+          a = p->v.xvv[i0 + i];
+          r[l + i] += a * d[k + i];
+          r[k + i] += a * d[l + i];
+        }
+        l += incu;
+        k += incu;
       }
       i0 += p->v.ngrid + 1;
     }
@@ -109,7 +109,7 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
     l = v * g->n;
     for (u = 0; u < p->natu; u++) {
       for (i = 0; i < n; i++)
-	r[l + i] += d[l + i] * p->v.xvv[i0 + i];
+        r[l + i] += d[l + i] * p->v.xvv[i0 + i];
       l += incu;
     }
     i0 += p->v.ngrid + 1;
@@ -122,16 +122,16 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
     k = p->puv.atyp[u] * p->natv * p->puv.ngrid;
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < n; i++)
-	g->data[i] = r[l + i] / p->v.symc[v] + p->puv.asympk[k + i];
+        g->data[i] = r[l + i] / p->v.symc[v] + p->puv.asympk[k + i];
       for (; i < g->n; i++)
-	g->data[i] = 0.0;
+        g->data[i] = 0.0;
 
       fftw_execute(g->plan);
 
       for (i = 0; i < n; i++)
-	d[l + i] = g->b * g->data[i] / (i + 1) - p->puv.asympr[k + i];
+        d[l + i] = g->b * g->data[i] / (i + 1) - p->puv.asympr[k + i];
       for (; i < g->n; i++)
-	d[l + i] = 0.0;
+        d[l + i] = 0.0;
 
       l += g->n;
       k += p->puv.ngrid;
@@ -170,13 +170,13 @@ int rismaw_Jx(void *prm, const float *x, float *r)
   for (u = 0; u < p->natu; u++) {
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < g->n; i++)
-	g->data[i] = p->dcdt[l + i] * x[l + i] * (i + 1);
+        g->data[i] = p->dcdt[l + i] * x[l + i] * (i + 1);
 
       fftwf_execute(g->plan);
 
       a = g->f * (float) p->v.symc[v];
       for (i = 0; i < g->n; i++)
-	r[l + i] = a * g->data[i];
+        r[l + i] = a * g->data[i];
 
       l += g->n;
     }
@@ -195,13 +195,13 @@ int rismaw_Jx(void *prm, const float *x, float *r)
       l = v * g->n;
       k = j * g->n;
       for (u = 0; u < p->natu; u++) {
-	for (i = 0; i < n; i++) {
-	  a = (float) p->v.xvv[i0 + (i + 1) * p->reduc - 1];
-	  r[l + i] += a * d[k + i];
-	  r[k + i] += a * d[l + i];
-	}
-	l += incu;
-	k += incu;
+        for (i = 0; i < n; i++) {
+          a = (float) p->v.xvv[i0 + (i + 1) * p->reduc - 1];
+          r[l + i] += a * d[k + i];
+          r[k + i] += a * d[l + i];
+        }
+        l += incu;
+        k += incu;
       }
       i0 += p->v.ngrid + 1;
     }
@@ -209,7 +209,7 @@ int rismaw_Jx(void *prm, const float *x, float *r)
     l = v * g->n;
     for (u = 0; u < p->natu; u++) {
       for (i = 0; i < n; i++)
-	r[l + i] += d[l + i] * (float) p->v.xvv[i0 + (i + 1) * p->reduc - 1];
+        r[l + i] += d[l + i] * (float) p->v.xvv[i0 + (i + 1) * p->reduc - 1];
       l += incu;
     }
     i0 += p->v.ngrid + 1;
@@ -221,12 +221,12 @@ int rismaw_Jx(void *prm, const float *x, float *r)
   for (u = 0; u < p->natu; u++) {
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < g->n; i++)
-	g->data[i] = r[l + i] / (float) p->v.symc[v];
+        g->data[i] = r[l + i] / (float) p->v.symc[v];
 
       fftwf_execute(g->plan);
 
       for (i = 0; i < g->n; i++)
-	r[l + i] = g->b * g->data[i] / (i + 1) - x[l + i];
+        r[l + i] = g->b * g->data[i] / (i + 1) - x[l + i];
 
       l += g->n;
     }

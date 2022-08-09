@@ -76,12 +76,12 @@ int amb_ignore(ambtraj_t *traj, int nskip)
     c = fgetc(traj->f);
     if (c != EOF) {
       do {
-	if (c == '\n')
-	  i++;
+        if (c == '\n')
+          i++;
       } while (i < traj->nline && (c = fgetc(traj->f)) != EOF);
       if (i < traj->nline) {
-	traj->err = errno;
-	return -1;
+        traj->err = errno;
+        return -1;
       }
       traj->frm++;
       n++;

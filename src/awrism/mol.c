@@ -26,13 +26,13 @@ int mol_read(const char *fn, mol_t *m)
     if (b[0] != '#' && l != 0) {
       n = atoi(b);
       if (n < 1)
-	return 2;
+        return 2;
     }
     if (l == 8) {
       c = fgetc(f);
       /* skip rest of line */
       while (!feof(f) && c != '\n')
-	c = fgetc(f);
+        c = fgetc(f);
     }
   }
   m->x = p[0] = (double *) malloc(n * (3 * sizeof(double) + sizeof(int)));
@@ -56,14 +56,14 @@ int mol_read(const char *fn, mol_t *m)
     if (c != '#' && c != '\n') {
       ungetc(c, f);
       for (j = 0; j < 6; ++j) {
-	fgets(b, fl[j] + 1, f);
-	l = strlen(b);
-	if (l < fl[j]) {
-	  free(m->x);
-	  free(p[3]);
-	  return 2;
-	}
-	p[j][i] = atof(b);
+        fgets(b, fl[j] + 1, f);
+        l = strlen(b);
+        if (l < fl[j]) {
+          free(m->x);
+          free(p[3]);
+          return 2;
+        }
+        p[j][i] = atof(b);
       }
       c = (char) fgetc(f);
       ++i;

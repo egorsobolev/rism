@@ -16,18 +16,18 @@ void hnc(rismaw_t *p, const double *tuv, double *cuv, float *dcdt, double *en)
     j = p->puv.atyp[u] * incu;
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < p->gj.n; i++) {
-	cuv[l] = exp(tuv[l] - p->puv.u[j + i]) - 1.0;
-	dcdt[k] = (float) cuv[l];
-	*en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v]; 
-	cuv[l] -= tuv[l];
-	l++;
-	k++;
+        cuv[l] = exp(tuv[l] - p->puv.u[j + i]) - 1.0;
+        dcdt[k] = (float) cuv[l];
+        *en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v]; 
+        cuv[l] -= tuv[l];
+        l++;
+        k++;
       }
       for (; i < p->ge.n; i++) {
-	cuv[l] = exp(tuv[l] - p->puv.u[j + i]) - 1.0;
-	*en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v]; 
-	cuv[l] -= tuv[l];
-	l++;
+        cuv[l] = exp(tuv[l] - p->puv.u[j + i]) - 1.0;
+        *en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v]; 
+        cuv[l] -= tuv[l];
+        l++;
       }
       j += p->puv.ngrid;
     }
@@ -64,21 +64,21 @@ void plhnc(rismaw_t *p, const double *tuv, double *cuv, float *dcdt, double *en)
     j = p->puv.atyp[u] * incu;
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < p->gj.n; i++) {
-	a = tuv[l] - p->puv.u[j + i];
-	cuv[l] = exp((a < 0.0) * a) - 1.0;
-	dcdt[k] = (float) cuv[l];
-	cuv[l] += (a >= 0.0) * a;
-	*en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v]; 
-	cuv[l] -= tuv[l];
-	l++;
-	k++;
+        a = tuv[l] - p->puv.u[j + i];
+        cuv[l] = exp((a < 0.0) * a) - 1.0;
+        dcdt[k] = (float) cuv[l];
+        cuv[l] += (a >= 0.0) * a;
+        *en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v]; 
+        cuv[l] -= tuv[l];
+        l++;
+        k++;
       }
       for (; i < p->ge.n; i++) {
-	a = tuv[l] - p->puv.u[j + i];
-	cuv[l] = exp((a < 0.0) * a) - 1.0 + (a >= 0.0) * a;
-	*en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v];	
-	cuv[l] -= tuv[l];
-	l++;
+        a = tuv[l] - p->puv.u[j + i];
+        cuv[l] = exp((a < 0.0) * a) - 1.0 + (a >= 0.0) * a;
+        *en += (cuv[l] + 1.0) * p->puv.u[j + i] * (i + 1) * (i + 1) * p->v.n[v];	
+        cuv[l] -= tuv[l];
+        l++;
       }
       j += p->puv.ngrid;
     }

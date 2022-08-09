@@ -70,7 +70,7 @@ int avgw_outbuf_init(int n, const gridparam_t *p, avgw_outbuf_t *b)
     b[i].mem = b[i].cur = m;
     m += p[i].np * AVGW_BUFSIZE;
       /*
-	b[i].n = 0;*/
+      b[i].n = 0;*/
   }
   return 0;
 }
@@ -202,11 +202,11 @@ void avgw_itail(const sgrid_t *g, const avgw_func_t *f, avgw_shapes_t *s, avgw_c
     while (i >= 0 && I1 < err && nz <= nzmax) {
       w0 = f->s[i];
       if (w1 == 0.0 || (w0 * w1) < 0.0) {
-	nz++;
-	c[j].Icut = I1;
-	c[j].nz = f->nz - nz;
-	I1 -= fabs(w0 * w1 / (w0 - w1));
-	lcut = g->dt * (i + w0 / fabs(w0 - w1));
+        nz++;
+        c[j].Icut = I1;
+        c[j].nz = f->nz - nz;
+        I1 -= fabs(w0 * w1 / (w0 - w1));
+        lcut = g->dt * (i + w0 / fabs(w0 - w1));
       }
       I1 += fabs(w0);
       w1 = w0;

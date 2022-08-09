@@ -4,6 +4,7 @@
 #include <math.h>
 #include <cblas.h>
 
+
 int sprw_mk(mol_t *m, double prec, double r, int ngl, int ngs, double dk, sprw_t *w)
 {
   double *l;
@@ -44,28 +45,28 @@ int sprw_mk(mol_t *m, double prec, double r, int ngl, int ngs, double dk, sprw_t
       a = 0;
       b = nd;
       while ((b - a) > 1) {
-	c = a + b / 2;
-	if (d > l[c]) a = c;
-	else if (d < l[c]) b = c;
-	else break;
+        c = a + b / 2;
+        if (d > l[c]) a = c;
+        else if (d < l[c]) b = c;
+        else break;
       }
 
       if (l[c] == d) {
-	w->i[k] = c;
+        w->i[k] = c;
       } else {
-	if (d < 3.0)
-	  w->nl++;
-	if (c < nd && l[c] < d)
-	  c++;
-	w->i[k] = c;
-	while (c < nd) {
-	  t = l[c];
-	  l[c] = d;
-	  d = t;
-	  c++;
-	}
-	l[nd] = d;
-	nd++;
+        if (d < 3.0)
+          w->nl++;
+        if (c < nd && l[c] < d)
+          c++;
+        w->i[k] = c;
+        while (c < nd) {
+          t = l[c];
+          l[c] = d;
+          d = t;
+          c++;
+        }
+        l[nd] = d;
+        nd++;
       }
       k++;
     }
@@ -178,4 +179,3 @@ void sprw_mul_flt(const sprw_t *w, int incw, int ngrid, int natv, int natu, cons
     }
   }
 }
-

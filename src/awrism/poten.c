@@ -54,11 +54,11 @@ void uljuv(const grid_t *g, const water_t *w, const mol_t *m, double *phi)
       s = 0.5 * (w->s[v] + m->ff.s[u]);
       e = a * sqrt(w->e[v] * m->ff.e[u]);
       for (i = 1; i < g->n; i++) {
-	r6 = s / (i * g->dr);
-	r6 = r6 * r6;
-	r6 = r6 * r6 * r6;
-	phi[j] += e * r6 * (r6 - 1.0);
-	j++;
+        r6 = s / (i * g->dr);
+        r6 = r6 * r6;
+        r6 = r6 * r6 * r6;
+        phi[j] += e * r6 * (r6 - 1.0);
+        j++;
       }
     }
 }
@@ -74,8 +74,8 @@ void ucoluv(const grid_t *g, const water_t *w, const mol_t *m, double *phi)
     for (v = 0; v < w->natom; v++) {
       quv = a * w->q[v] * m->ff.q[u];
       for (i = 1; i < g->n; i++) {
-	phi[j] += quv / (i * g->dr);
-	j++;
+        phi[j] += quv / (i * g->dr);
+        j++;
       }
     }
 }

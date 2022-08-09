@@ -22,10 +22,10 @@ void asymp(const grid_t *g, const water_t *w, const mol_t *m, double alpha, doub
 
     for (u = 0; u < m->ntype; u++)
       for (v = 0; v < w->natom; v++) {
-	quv = a * w->q[v] * m->ff.q[u];
-	asympr[j] = quv * er;
-	asympk[j] = quv * ex;
-	j += np;
+        quv = a * w->q[v] * m->ff.q[u];
+        asympr[j] = quv * er;
+        asympk[j] = quv * ex;
+        j += np;
       }
   }
 }

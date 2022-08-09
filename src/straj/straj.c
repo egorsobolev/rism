@@ -189,14 +189,14 @@ int main(int narg, char **argv)
 #endif
     if (!feof(traj.f) && (fn <= 0 || (traj.frm + nskip + 1) < fn)) {
       if (amb_ignore(&traj, nskip) == -1) {
-	perror("amb_ignore");
-	goto err6;
+        perror("amb_ignore");
+        goto err6;
       }
       if (!feof(traj.f)) {
-	if (amb_read(&traj, x) == -1) {
-	  perror("amb_read");
-	  goto err6;
-	}
+        if (amb_read(&traj, x) == -1) {
+          perror("amb_read");
+          goto err6;
+        }
       }
     }
   }
@@ -207,8 +207,8 @@ int main(int narg, char **argv)
     }
     if (!rank) {
       if (lavg_writehdr(&s, out)) {
-	print_error("lavg_writehdr");
-	goto err6;
+        print_error("lavg_writehdr");
+        goto err6;
       }
     }
     toc = walltime();

@@ -121,8 +121,8 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     for (u = 0; u < rism->natu; u++) {
       j = rism->puv.atyp[u] * incu;
       for (i = 0; i < incu; i++) {
-	tuv[l] = -rism->puv.asympr[j + i];
-	l++;
+        tuv[l] = -rism->puv.asympr[j + i];
+        l++;
       }
     }
 
@@ -155,8 +155,8 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     for (u = 0; u < rism->natu; u++) {
       j = rism->puv.atyp[u] * incu;
       for (i = 0; i < incu; i++) {
-	tuv[l] += rism->puv.asympr[j + i];
-	l++;
+        tuv[l] += rism->puv.asympr[j + i];
+        l++;
       }
     }
     nn[0] = g.n - 1;

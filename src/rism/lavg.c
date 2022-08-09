@@ -131,9 +131,9 @@ void lavg_update(const float *x, float *l, lavg_t *s)
       l[k] = a;
       s->mean[k] += a;
       if (a < s->mn[k])
-	s->mn[k] = a;
+        s->mn[k] = a;
       if (a > s->mx[k])
-	s->mx[k] = a;
+        s->mx[k] = a;
       k++;
     }
   }

@@ -244,15 +244,15 @@ int main(int narg, char **argv)
       avgw_hist2aw(&g, d.ld[bpos], d.lm[bpos], d.nfrm, d.hst + r, &f);
       avgw_itail(&g, &f, &s, awcut);
       if (s.interp)
-	sspline_uni(f.np, f.s, 0.0, 0.0, f.s2, f.u);
+        sspline_uni(f.np, f.s, 0.0, 0.0, f.s2, f.u);
 
       for (i = 0; i < s.n; i++) {
-	W[i].Icut[bpos] = awcut[i].Icut;
-	W[i].npcut[bpos] = awcut[i].npcut;
-	W[i].nz[bpos] = awcut[i].nz;
+        W[i].Icut[bpos] = awcut[i].Icut;
+        W[i].npcut[bpos] = awcut[i].npcut;
+        W[i].nz[bpos] = awcut[i].nz;
 
-	avgw_reshape(&g, &f, &s.p[i], &awcut[i], cut[i].cur);
-	cut[i].cur = cut[i].cur + awcut[i].npcut;
+        avgw_reshape(&g, &f, &s.p[i], &awcut[i], cut[i].cur);
+        cut[i].cur = cut[i].cur + awcut[i].npcut;
       }
       r += d.ld[bpos];
       bpos++;
@@ -263,14 +263,14 @@ int main(int narg, char **argv)
 #ifdef MPI
       err = MPI_File_write_ordered(s.f[i], cut[i].mem, nb, MPI_FLOAT, MPI_STATUS_IGNORE);
       if (err) {
-	set_mpi_error(err);
-	print_error("MPI_File_write_ordered:");
-	goto err8;
+        set_mpi_error(err);
+        print_error("MPI_File_write_ordered:");
+        goto err8;
       }
 #else
       if (fwrite(cut[i].mem, sizeof(float), nb, s.f[i]) != nb) {
-	perror("fwrite");
-	goto err8;
+        perror("fwrite");
+        goto err8;
       }
 #endif
       cut[i].cur = cut[i].mem;
@@ -309,9 +309,9 @@ int main(int narg, char **argv)
     for (i = 0; i < s.n; i++) {
       err = MPI_File_write_ordered(s.f[i], W[i].npcut + bpos, blen, MPI_INT, MPI_STATUS_IGNORE);
       if (err) {
-	set_mpi_error(err);
-	print_error("MPI_File_write_ordered:");
-	goto err8;
+        set_mpi_error(err);
+        print_error("MPI_File_write_ordered:");
+        goto err8;
       }
     }
     cpos += ns;
