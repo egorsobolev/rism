@@ -1,0 +1,2 @@
+*.mdcrd.gz filter=lfs diff=lfs merge=lfs -text
+*.rbin filter=lfs diff=lfs merge=lfs -text
