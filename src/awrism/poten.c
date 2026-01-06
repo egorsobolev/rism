@@ -16,7 +16,7 @@ int poten_mk(const grid_t *g, const water_t *w, const mol_t *m, double ngalpha, 
   a = 4.0 * M_PI * w->m.rho * g->dr * g->dr * g->dr;
   nfun = m->ntype * w->natom;
   */
-  puv->ngrid = g->n - 1;
+  puv->ngrid = g->ngrid - 1;
   np = m->ntype * w->natom * puv->ngrid;
   puv->u = (double *) malloc(3 * np * sizeof(double));
   if (!puv->u)
@@ -53,7 +53,7 @@ void uljuv(const grid_t *g, const water_t *w, const mol_t *m, double *phi)
     for (v = 0; v < w->natom; v++) {
       s = 0.5 * (w->s[v] + m->ff.s[u]);
       e = a * sqrt(w->e[v] * m->ff.e[u]);
-      for (i = 1; i < g->n; i++) {
+      for (i = 1; i < g->ngrid; i++) {
         r6 = s / (i * g->dr);
         r6 = r6 * r6;
         r6 = r6 * r6 * r6;
@@ -73,7 +73,7 @@ void ucoluv(const grid_t *g, const water_t *w, const mol_t *m, double *phi)
   for (u = 0; u < m->ntype; u++)
     for (v = 0; v < w->natom; v++) {
       quv = a * w->q[v] * m->ff.q[u];
-      for (i = 1; i < g->n; i++) {
+      for (i = 1; i < g->ngrid; i++) {
         phi[j] += quv / (i * g->dr);
         j++;
       }

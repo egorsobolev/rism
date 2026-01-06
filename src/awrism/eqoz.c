@@ -47,7 +47,7 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
   double a;
 
   rismaw_t *p = (rismaw_t *) prm;
-  grid_eq_t *g = &p->ge;
+  grid_t *g = &p->ge;
 
   incu = p->natv * g->n;
   np = p->natu * incu;
@@ -155,7 +155,7 @@ int rismaw_Jx(void *prm, const float *x, float *r)
   float a;
 
   rismaw_t *p = (rismaw_t *) prm;
-  grid_jac_t *g = &p->gj;
+  grid_t *g = &p->gj;
 
   incu = p->natv * g->n;
   np = p->natu * incu;

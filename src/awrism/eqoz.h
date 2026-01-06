@@ -35,13 +35,13 @@ struct RISM_IDL_AW
   int nfun;
 
   solv_t v;
-  grid_eq_t ge;
+  grid_t ge;
   avgw_t wuu;
   potenuv_t puv;
   closure *closure;
   closure_c *closure_c;
 
-  grid_jac_t gj;
+  grid_t gj;
   float *dcdt;
 
   int reduc;
