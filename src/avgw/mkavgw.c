@@ -54,7 +54,6 @@ int main(int narg, char **argv)
     arg_rem(NULL, "<np> is size in points"),
     arg_rem(NULL, "<dr> is spatial grid step, A"),
     opt_help = arg_lit0(NULL, "help", "print this help and exit"),
-    opt_ver = arg_lit0(NULL, "version", "print version information and exit"),
     opt_in = arg_file1(NULL, NULL, "<h-file>", "input histograms file"),
     opt_out = arg_file1(NULL, NULL, "<aw-file>", "output aw-files prefix"),
     end = arg_end(20),
@@ -104,14 +103,6 @@ int main(int narg, char **argv)
     printf("Usage: %s", argv[0]);
     arg_print_syntax(stdout, argtable,"\n");
     arg_print_glossary(stdout, argtable,"  %-26s %s\n");
-    exitcode = EXIT_SUCCESS;
-    goto err1;
-  }
-  /* special case: '--version' takes precedence error reporting */
-  if (opt_ver->count > 0){
-    printf("avgw 1.0 Aug 11, 2013\n");
-    printf("Author: Egor Sobolev\n");
-    printf("Copyright (C) 2004-2013 Institute of Mathematical Problems of Biology RAS\n");
     exitcode = EXIT_SUCCESS;
     goto err1;
   }

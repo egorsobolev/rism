@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#define NOPTION 16
+#define NOPTION 15
 
 void **argtable_mk(rism_opt_t *opt)
 {
@@ -24,7 +24,6 @@ void **argtable_mk(rism_opt_t *opt)
   t[i++] = opt->lmaxi = arg_int0(NULL, "lmaxi", "<int>", "maximum number of linear solver iterations (default: 5000)");
   t[i++] = opt->narm = arg_int0(NULL, "narm", "<int>", "maximum number of Armijo' step-size procedure iterations (default: 5)");
   t[i++] = opt->help = arg_lit0(NULL, "help", "print this help and exit");
-  t[i++] = opt->ver = arg_lit0(NULL, "version", "print version information and exit");
   t[i++] = opt->prefix = arg_file1(NULL, NULL, "<prefix>", "prefix of output files");
   t[i++] = opt->end = arg_end(20);
 
@@ -40,7 +39,7 @@ void **argtable_mk(rism_opt_t *opt)
   opt->rtol->dval[0] = 1e-7;
   opt->etol->dval[0] = 0.2;
   opt->nrmaxi->ival[0] = 300;
-  opt->lmaxi->ival[0] = 5000; 
+  opt->lmaxi->ival[0] = 5000;
   opt->narm->ival[0] = 5;
 
   return t;

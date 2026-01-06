@@ -26,7 +26,6 @@ int main(int narg, char **argv)
     opt_np = arg_int0("n", "points", "<np>", "grid size in points (default: 8192)"),
     opt_dr = arg_dbl0("s", "dr", "<dr>", "spatial grid step, A (default: 0.014)"),
     opt_help = arg_lit0(NULL, "help", "print this help and exit"),
-    opt_ver = arg_lit0(NULL, "version", "print version information and exit"),
     opt_in = arg_file1(NULL, NULL, "<s-file>", "input atom-atom distance file"),
     opt_out = arg_file1(NULL, NULL, "<h-file>", "output histograms file"),
     end = arg_end(20),
@@ -73,14 +72,6 @@ int main(int narg, char **argv)
   }
   opt_np->ival[0] = 8192;
   opt_dr->dval[0] = 0.014;
-  /* special case: '--version' takes precedence error reporting */
-  if (opt_ver->count > 0){
-    printf("dhist 1.0 Aug 11, 2013\n");
-    printf("Author: Egor Sobolev\n");
-    printf("Copyright (C) 2004-2013 Institute of Mathematical Problems of Biology RAS\n");
-    exitcode = EXIT_SUCCESS;
-    goto err1;
-  }
   exitcode = EXIT_FAILURE;
   /* If the parser returned any errors then display them and exit */
   if (nerrors > 0) {
@@ -96,7 +87,7 @@ int main(int narg, char **argv)
     set_mpi_error(err);
     print_error("MPI_File_open:");
     goto err1;
-  }  
+  }
 #else
   in = fopen(opt_in->filename[0], "rb");
   if (!in) {

@@ -28,7 +28,6 @@ int main(int narg, char **argv)
     opt_fin = arg_int0("e", "end", "<fn>", "finish at fn frame (default: until the end of file)"),
     opt_step = arg_int0("s", "step", "<m>", "process each m frame (default: 1)"),
     opt_help = arg_lit0(NULL, "help", "print this help and exit"),
-    opt_ver = arg_lit0(NULL, "version", "print version information and exit"),
     opt_traj = arg_file1(NULL, NULL, "<trajectory>", "AMBER trajectory file"),
     opt_out = arg_file1(NULL, NULL, "<output>", "Output file"),
     end = arg_end(20),
@@ -74,14 +73,6 @@ int main(int narg, char **argv)
     printf("Usage: %s", argv[0]);
     arg_print_syntax(stdout, argtable,"\n");
     arg_print_glossary(stdout, argtable,"  %-20s %s\n");
-    exitcode = EXIT_SUCCESS;
-    goto err1;
-  }
-  /* special case: '--version' takes precedence error reporting */
-  if (opt_ver->count > 0){
-    printf("straj 1.0 Jul 30, 2013\n");
-    printf("Author: Egor Sobolev\n");
-    printf("Copyright (C) 2004-2013 Institute of Mathematical Problems of Biology RAS\n");
     exitcode = EXIT_SUCCESS;
     goto err1;
   }
@@ -140,7 +131,7 @@ int main(int narg, char **argv)
     printf("Nothing was done.\n");
     goto err3;
   }
- 
+
   if (lavg_init(opt_natm->ival[0], &s)) {
     print_error("linit");
     goto err3;

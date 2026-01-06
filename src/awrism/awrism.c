@@ -207,14 +207,6 @@ int main(int narg, char **argv)
     exitcode = EXIT_SUCCESS;
     goto err1;
   }
-  /* special case: '--version' takes precedence error reporting */
-  if (opt.ver->count > 0){
-    printf("awrism 1.0 Feb 20, 2014\n");
-    printf("Author: Egor Sobolev\n");
-    printf("Copyright (C) 2004-2013 Institute of Mathematical Problems of Biology RAS\n");
-    exitcode = EXIT_SUCCESS;
-    goto err1;
-  }
   /* If the parser returned any errors then display them and exit */
   if (nerrors > 0) {
     /* Display the error details contained in the arg_end struct.*/
