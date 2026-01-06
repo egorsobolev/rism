@@ -1,6 +1,7 @@
 #include <rism/ambtraj.h>
 #include <rism/lavg.h>
 #include <rism/error.h>
+#include <rism/utils.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,7 +13,7 @@
 # define walltime()      MPI_Wtime()
 #else
 # include <time.h>
-# define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+# define walltime()      ((double) walltime() * 1e-6)
 #endif
 
 int main(int narg, char **argv)

@@ -7,6 +7,7 @@
 #include <cblas.h>
 #include <time.h>
 
+#include <rism/utils.h>
 #include "nr.h"
 
 #define print   printf
@@ -51,7 +52,7 @@ double ftew_next(fterm_ew_t *f, double normd)
   if (etaT > f->eta)
     f->eta = etaT;
   f->normdT = normd;
-    
+
   return f->eta;
 }
 
@@ -61,16 +62,17 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
   double *d, *s, *tN, norms, eta, lambda, err, errN, v, en1, en2, dE, errv;
   float *b, *x, eps;
   int n, m, i, j, flag, nlit, maxlit, l, narm;
-  double lntm, nrtm, lntmi;
+  double lntm, nrtm, lntmi, nrtm_cpu;
   fterm_ew_t fterm;
 
-  nrtm = clock() / (double) CLOCKS_PER_SEC;
+  nrtm_cpu = clock() / (double) CLOCKS_PER_SEC;
+  nrtm = walltime() * 1e-6;
   lntm = .0;
 
   ftew_setdef(&fterm, *rtol);
   maxlit = eq->nrprm.lmaxi;
   narm = eq->nrprm.narm;
-  /*    
+  /*
   ln.natv = eq->solv.natv;
   ln.symc = eq->solv.symc;
   ln.lxvva = eq->solv.lxvva;
@@ -95,7 +97,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
   n = eq->solv.natv * eq->grid.nr;
   */
   v = sqrt(n);
-    
+
   b = (float *) malloc(2 * m * sizeof(float) + 3 * n * sizeof(double));
   if (!b) {
     return -1;
@@ -109,13 +111,13 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
   err = cblas_dnrm2(n, d, 1) / v;
 
   dE = DBL_MAX;
-    
+
   print("RMSE(Z[0]) = %.1e\n", err);
   print("    #     Nit F      t,s M   eta   ||Jx-Z||  RMSE(Z)       dE  RMSE(v)\n");
   flush;
   i = 0;
   while (i <= *maxit && (err > *rtol || fabs(dE) > *etol)) {
-        
+
     nlit = maxlit;
     eta = ftew_next(&fterm, err);
     eps = (float) eta;
@@ -123,12 +125,12 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 
     eq->getb(eq->p, d, b);
     memset(x, 0, m * sizeof(float));
-    
-    lntmi = clock() / (double) CLOCKS_PER_SEC;
+
+    lntmi = walltime() * 1e-6;
     flag = bicgstab(m, b, x, eq->Jx, eq->p, &eps, &nlit);
-    lntmi = clock() / (double) CLOCKS_PER_SEC - lntmi;
+    lntmi = walltime() * 1e-6 - lntmi;
     lntm += lntmi;
-        
+
     if (flag) {
       /* no convergence of linear solver */
       return 1;
@@ -138,7 +140,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
     cblas_dcopy(n, d, 1, s, 1);
     cblas_sscal(m, -1.0, x, 1);
     eq->putx(eq->p, x, s);
-        
+
     cblas_dcopy(n, t, 1, tN, 1);
     cblas_daxpy(n, 1.0, s, 1, tN, 1);
     en2 = en1;
@@ -155,7 +157,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
       errN = cblas_dnrm2(n, d, 1) / v;
       ++j;
     }
-        
+
     if (j >= narm) {
       /* no convergence of armigo*/
       return 2;
@@ -164,22 +166,22 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
     err = errN;
     dE = en2 - en1;
     errv = lambda * cblas_dnrm2(n, s, 1) / v;
-        
+
     print("%5d %7d %1d %8.1f %1d %5.2f %10.6f %8.1e %8.1e %8.1e\n", i+1, nlit, flag, lntmi, j, eta, norms, err, dE, errv);
     flush;
     ++i;
   }
-    
+
   free(b);
-    
+
   *maxit = i;
   *rtol = err;
   *etol = abs(dE);
 
-  nrtm = clock() / (double) CLOCKS_PER_SEC - nrtm;
-  print("NR time is %.1fs, BiCGStab time is %.1fs\n", nrtm, lntm);
+  nrtm_cpu = clock() / (double) CLOCKS_PER_SEC - nrtm_cpu;
+  nrtm = walltime() * 1e-6 - nrtm;
+  print("NR: %.1lfs, BiCGStab: %.1lfs, CPU usage: %.1lf\n", nrtm, lntm, nrtm_cpu / nrtm);
   print("RMSE(Z[%d]) = %.1e\n", i, err);
-    
+
   return 0; /* OK */
 }
-
