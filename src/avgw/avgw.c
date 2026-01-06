@@ -188,6 +188,7 @@ void avgw_itail(const sgrid_t *g, const avgw_func_t *f, avgw_shapes_t *s, avgw_c
   nz = 0;
   w1 = 0.0;
   I1 = 0.0;
+  lcut = g->dt * i;
 
   nzmax = f->nz - AVGW_MINZEROS;
 
