@@ -178,7 +178,7 @@ void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_
   }
 }
 
-void avgw_itail(const sgrid_t *g, const avgw_func_t *f, avgw_shapes_t *s, avgw_cutparam_t *c)
+void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c)
 {
   int i, j, k, nz, nzmax;
   float w0, w1, lcut, lw;

@@ -30,7 +30,7 @@ struct AVGW_CUTPARAM
 {
   int nz;
   int npcut;
-  float Icut;  
+  float Icut;
 };
 typedef struct AVGW_CUTPARAM avgw_cutparam_t;
 
@@ -65,7 +65,7 @@ int avgw_write_hdr(avgw_mtx_t *W, FILE *f);
 #endif
 int avgw_write_info(avgw_mtx_t *W, FILE *f);
 void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_func_t *f);
-void avgw_itail(const sgrid_t *g, const avgw_func_t *f, avgw_shapes_t *s, avgw_cutparam_t *c);
+void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c);
 void avgw_reshape(const sgrid_t *g, const avgw_func_t *f, const gridparam_t *p, const avgw_cutparam_t *c, float *fcut);
 
 #endif /* __RISM_AVGW_AVGW_H */
