@@ -1,29 +1,15 @@
 #ifndef __RISM_GRID_H
 #define __RISM_GRID_H
 
-struct GRID_FLOAT
+#include <stdlib.h>
+
+struct Grid
 {
-  int np;
-  float dr;
-  float dt;
-  float f;
-  float b;
+  size_t n, ngrid;
+  double dr, dk, f, b, c;
 };
+typedef struct Grid grid_t;
 
-typedef struct GRID_FLOAT sgrid_t;
-
-struct GRID_DOUBLE
-{
-  int np;
-  double dr;
-  double dt;
-  double f;
-  double b;
-};
-
-typedef struct GRID_DOUBLE dgrid_t;
-
-int sgrid_init(int np, float dr, sgrid_t *g);
-int dgrid_init(int np, double dr, dgrid_t *g);
+int grid_init(int n, double dr, grid_t *g);
 
 #endif /* __RISM_GRID_H */

@@ -1,24 +1,18 @@
 #include <rism/grid.h>
 
+#include <stdlib.h>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-int sgrid_init(int np, float dr, sgrid_t *g)
+int grid_init(int n, double dr, grid_t *g)
 {
-  g->np = np;
+  g->ngrid = n;
+  g->n = n - 1;
   g->dr = dr;
-  g->dt = M_PI / (dr * np);
-  g->f = 4.0 * M_PI * dr;
-  g->b = 2.0 / (g->f * np);
-  return 0;
-}
-
-int dgrid_init(int np, double dr, dgrid_t *g)
-{
-  g->np = np;
-  g->dr = dr;
-  g->dt = M_PI / (dr * np);
-  g->f = 4.0 * M_PI * dr;
-  g->b = 2.0 / (g->f * np);
+  g->dk = M_PI / (dr * n);
+  g->f = 2.0 * M_PI * dr * dr;
+  g->b = 0.5 / (g->f * n);
+  g->c = 0.5 / n;
   return 0;
 }

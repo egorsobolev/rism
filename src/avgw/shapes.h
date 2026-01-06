@@ -15,7 +15,7 @@ struct GRIDPARAM
 {
   int np;
   double dr;
-  double dt;
+  double dk;
   double trun;
   double l;
   int interp;
@@ -36,7 +36,7 @@ struct AVGW_SHAPES
 };
 typedef struct AVGW_SHAPES avgw_shapes_t;
 
-int avgw_shape_parse(const sgrid_t *g, const char *shape, gridparam_t *p);
+int avgw_shape_parse(const grid_t *g, const char *shape, gridparam_t *p);
 void avgw_shapes_print(avgw_shapes_t *s);
 #ifdef MPI
 int avgw_shapes_open(const char *prefix, int n, const gridparam_t *p, MPI_File *f);

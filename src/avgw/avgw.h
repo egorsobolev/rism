@@ -52,7 +52,7 @@ struct AVGW_OUTBUF
 };
 typedef struct AVGW_OUTBUF avgw_outbuf_t;
 
-int avgw_func_init(const sgrid_t *g, avgw_func_t *f);
+int avgw_func_init(const grid_t *g, avgw_func_t *f);
 void avgw_func_free(avgw_func_t *f);
 int avgw_mtx_init(int n, gridparam_t *p, int nfun, avgw_mtx_t *W);
 void avgw_mtx_free(avgw_mtx_t *W);
@@ -64,8 +64,8 @@ int avgw_write_hdr(avgw_mtx_t *W, MPI_File f);
 int avgw_write_hdr(avgw_mtx_t *W, FILE *f);
 #endif
 int avgw_write_info(avgw_mtx_t *W, FILE *f);
-void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_func_t *f);
-void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c);
-void avgw_reshape(const sgrid_t *g, const avgw_func_t *f, const gridparam_t *p, const avgw_cutparam_t *c, float *fcut);
+void avgw_hist2aw(grid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_func_t *f);
+void avgw_itail(const grid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c);
+void avgw_reshape(const grid_t *g, const avgw_func_t *f, const gridparam_t *p, const avgw_cutparam_t *c, float *fcut);
 
 #endif /* __RISM_AVGW_AVGW_H */

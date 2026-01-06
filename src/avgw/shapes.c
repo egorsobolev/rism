@@ -10,13 +10,13 @@
 #include <math.h>
 #include <float.h>
 
-int avgw_shape_parse(const sgrid_t *g, const char *shape, gridparam_t *p)
+int avgw_shape_parse(const grid_t *g, const char *shape, gridparam_t *p)
 {
   const char *b;
   char *e;
   double dt;
   b = shape;
-  p->np = g->np;
+  p->np = g->ngrid;
   p->dr = g->dr;
   p->trun = strtod(b, &e);
   if (e == b)
@@ -25,7 +25,7 @@ int avgw_shape_parse(const sgrid_t *g, const char *shape, gridparam_t *p)
     b = e + 1;
     p->np = strtoul(b, &e, 10);
     if (e == b)
-      p->np = g->np;
+      p->np = g->ngrid;
   }
   if (*e == ':') {
     b = e + 1;
@@ -37,8 +37,8 @@ int avgw_shape_parse(const sgrid_t *g, const char *shape, gridparam_t *p)
     return -1;
 
   p->l = p->dr * p->np;
-  p->dt = M_PI / p->l;
-  p->interp = (fmodf(p->dt, g->dt) > FLT_EPSILON);
+  p->dk = M_PI / p->l;
+  p->interp = (fmodf(p->dk, g->dk) > FLT_EPSILON);
 
   return 0;
 }
@@ -63,12 +63,12 @@ void avgw_shapes_print(avgw_shapes_t *s)
 int avgw_shapes_alloc(int n, const gridparam_t *p, void **b)
 {
    int i, l;
-   
+
    memset(b, 0, GRID_SHAPES_MAX * sizeof(float *));
    l = p[0].np;
    for (i = 1; i < n; i++)
      l += p[i].np;
-   
+
    b[0] = malloc((l * sizeof(float) + sizeof(int)) * GRID_SHAPES_BUFSIZE);
    if (b[0])
      return -1;
