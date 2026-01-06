@@ -2,6 +2,7 @@
 #include <rism/grid.h>
 #include <rism/interp.h>
 #include <rism/error.h>
+#include <rism/utils.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,7 +14,7 @@
 # define walltime()      MPI_Wtime()
 #else
 # include <time.h>
-# define walltime()      ((double) clock() / CLOCKS_PER_SEC)
+# define walltime()      ((double) walltime() * 1e-6)
 #endif
 
 #define GRID_SHAPES_MAX 16
