@@ -11,10 +11,10 @@ serial: mkavgw
 mpi:    mkavgw.MPI
 
 .o.serial/%.o:  %.c
-	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(CC) $(CFLAGS) -I../../include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I../../include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 
@@ -29,12 +29,12 @@ $(OBJSRL):      | .o.serial
 mkavgw:	librism.a ../../lib/libcpocketfft.a $(OBJSRL)
 	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
          -lblas -lm -lcpocketfft -lstdc++ \
-         -o $(RISMROOT)/bin/$@
+         -o ../../bin/$@
 
 mkavgw.MPI:	librism-mpi.a ../../lib/libcpocketfft.a $(OBJMPI)
 	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
          -lrism-mpi -largtable2 -lblas -lm -lcpocketfft -lstdc++ \
-         -o $(RISMROOT)/bin/$@
+         -o ../../bin/$@
 
 librism.a:
 	cd ../rism && make serial
@@ -52,6 +52,5 @@ librism-mpi.a:
 
 .PHONY: clean
 clean:
-	-rm -r $(OBJMPI) $(OBJSRL) $(RISMROOT)/bin/mkavgw $(RISMROOT)/bin/mkavgw.MPI
-	-rmdir .o.mpi .o.serial
+	-rm -rf .o.mpi .o.serial ../../bin/mkavgw ../../bin/mkavgw.MPI
 	-rm -rf ../../lib/libcpocketfft.a ../../include/fft.h
