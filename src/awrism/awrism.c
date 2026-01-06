@@ -40,7 +40,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     printf("3.%d. SOLVENT\n", i+1);
     printf("   Natom     Nfun    Ngrid        T,K   rho,A^-3\n");
     printf("%8d %8d %8d %10g %10g\n", w.natom, w.nfun, w.ngrid, w.m.t / 1.9872e-3, w.m.rho);
- 
+
     rism->natv = w.natom;
     rism->nfun = rism->natv * rism->natu;
     rism->v.xvv = w.xvv;
@@ -79,7 +79,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
       exitcode = 6;
       goto err2;
     }
-    
+
     if (poten_mk(&g, &w, m, rism->ngalpha, &rism->puv)) {
       printf("Error while initialize potential functions\n");
       exitcode = 5;
@@ -166,8 +166,6 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     */
     free(tuv);
     free(rism->dcdt);
-    grid_jac_del(&rism->gj);
-    grid_eq_del(&rism->ge);
     poten_del(&rism->puv);
     water_del(&w);
     avgw_del(&rism->wuu);
@@ -179,9 +177,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
  err6:
   free(rism->dcdt);
  err5:
-  grid_jac_del(&rism->gj);
  err4:
-  grid_eq_del(&rism->ge);
  err3:
   poten_del(&rism->puv);
  err2:
@@ -296,7 +292,7 @@ int main(int narg, char **argv)
   eq.Z = &rismaw_eq;
   eq.getb = &rismaw_getx;
   eq.putx = &rismaw_putx;
-  
+
   eq.nrprm.maxi = opt.nrmaxi->ival[0] - 1;
   eq.nrprm.etol = opt.etol->dval[0];
   eq.nrprm.rtol = opt.rtol->dval[0];
@@ -305,7 +301,7 @@ int main(int narg, char **argv)
 
   awrism_mgrid(&eq, &gp, &m);
 
-  
+
   exitcode = EXIT_SUCCESS;
  err3:
  err2:

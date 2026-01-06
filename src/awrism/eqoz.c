@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <cblas.h>
+#include <fft.h>
 
 void rismaw_getx(const void *prm, const double *d, float *x)
 {
@@ -44,7 +45,7 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
   double *r;
   int i, j, u, v, k, l, s, np, incu, i0, n;
   double a;
-  
+
   rismaw_t *p = (rismaw_t *) prm;
   grid_eq_t *g = &p->ge;
 
@@ -66,14 +67,14 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
     k = p->puv.atyp[u] * p->natv * p->puv.ngrid;
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < n; i++)
-        g->data[i] = (r[l + i] - p->puv.asympr[k + i]) * (i + 1);
+        r[l + i] = (r[l + i] - p->puv.asympr[k + i]) * (i + 1);
       for (; i < g->n; i++)
-        g->data[i] = 0.0;
+        r[l + i] = 0.0;
 
-      fftw_execute(g->plan);
+      fft_dst(1, &g->n, 1, r + l, r + l, 1.0, 0);
 
       for (i = 0; i < n; i++)
-        r[l + i] = (g->f * g->data[i] + p->puv.asympk[k + i]) * p->v.symc[v];
+        r[l + i] = (g->f * r[l + i] + p->puv.asympk[k + i]) * p->v.symc[v];
       for (; i < g->n; i++)
         r[l + i] = 0.0;
 
@@ -122,14 +123,15 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
     k = p->puv.atyp[u] * p->natv * p->puv.ngrid;
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < n; i++)
-        g->data[i] = r[l + i] / p->v.symc[v] + p->puv.asympk[k + i];
+        d[l + i] = r[l + i] / p->v.symc[v] + p->puv.asympk[k + i];
       for (; i < g->n; i++)
-        g->data[i] = 0.0;
+        d[l + i] = 0.0;
 
-      fftw_execute(g->plan);
+      fft_dst(1, &g->n, 1, d + l, d + l, 1.0, 0);
 
       for (i = 0; i < n; i++)
-        d[l + i] = g->b * g->data[i] / (i + 1) - p->puv.asympr[k + i];
+        d[l + i] = g->b * d[l + i] / (i + 1) - p->puv.asympr[k + i];
+
       for (; i < g->n; i++)
         d[l + i] = 0.0;
 
@@ -170,13 +172,10 @@ int rismaw_Jx(void *prm, const float *x, float *r)
   for (u = 0; u < p->natu; u++) {
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < g->n; i++)
-        g->data[i] = p->dcdt[l + i] * x[l + i] * (i + 1);
-
-      fftwf_execute(g->plan);
+        r[l + i] = p->dcdt[l + i] * x[l + i] * (i + 1);
 
       a = g->f * (float) p->v.symc[v];
-      for (i = 0; i < g->n; i++)
-        r[l + i] = a * g->data[i];
+      fftf_dst(1, &g->n, 1, r + l, r + l, a, 0);
 
       l += g->n;
     }
@@ -221,12 +220,12 @@ int rismaw_Jx(void *prm, const float *x, float *r)
   for (u = 0; u < p->natu; u++) {
     for (v = 0; v < p->natv; v++) {
       for (i = 0; i < g->n; i++)
-        g->data[i] = r[l + i] / (float) p->v.symc[v];
+        r[l + i] /= p->v.symc[v];
 
-      fftwf_execute(g->plan);
+      fftf_dst(1, &g->n, 1, r + l, r + l, 1.0, 0);
 
       for (i = 0; i < g->n; i++)
-        r[l + i] = g->b * g->data[i] / (i + 1) - x[l + i];
+        r[l + i] = g->b * r[l + i] / (i + 1) - x[l + i];
 
       l += g->n;
     }
