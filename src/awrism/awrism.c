@@ -6,7 +6,7 @@
 #include <float.h>
 #include <cblas.h>
 
-#include "grid.h"
+#include <rism/grid.h>
 #include "water.h"
 #include "mol.h"
 #include "avgw.h"
@@ -50,8 +50,8 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     rism->v.t = w.m.t;
     rism->v.rho = w.m.rho;
 
-    ginit(w.ngrid, w.dr, &rism->ge);
-    ginit(w.ngrid / rism->reduc - 1, w.dr, &rism->gj);
+    grid_init(w.ngrid, w.dr, &rism->ge);
+    grid_init(w.ngrid / rism->reduc - 1, w.dr, &rism->gj);
     eq->nZ = rism->nfun * rism->ge.n;
     eq->nJx = rism->nfun * rism->gj.n;
     printf("4.%d. GRID\n", i+1);

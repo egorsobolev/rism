@@ -15,7 +15,7 @@ struct SOLV
 };
 typedef struct SOLV solv_t;
 
-#include "grid.h"
+#include <rism/grid.h>
 
 typedef struct RISM_IDL_AW rismaw_t;
 typedef void closure(rismaw_t *, const double *, double *, float *, double *);
