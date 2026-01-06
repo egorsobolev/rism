@@ -11,7 +11,7 @@
 #include <math.h>
 #include <float.h>
 
-#include <fftw3.h>
+#include <fft.h>
 
 int avgw_func_init(const sgrid_t *g, avgw_func_t *f)
 {
@@ -146,26 +146,28 @@ void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_
 {
   float k, w0, w1;
   int m, i;
+  size_t n1;
   /* expand histogram */
-  memset(g->d, 0, (g->np - 1) * sizeof(float));
   m = i0 + n;
   if (m > g->np)
     m = g->np;
   k = 1.0 / nsamp;
-  for (i = i0; i < m; i++)
-    g->d[i - 1] = k * h[i - i0] / i;
 
-  /* make fft */
-  fftwf_execute(g->p);
- 
+  memset(f->s + 1, 0, (g->np - 1) * sizeof(float));
+  for (i = i0; i < m; i++)
+    f->s[i] = k * h[i - i0] / i;
+
+  n1 = g->np - 1;
+  fftf_dst(1, &n1, 1, f->s + 1, f->s + 1, 1.0, 0);
+
   k = 0.5 * g->np / M_PI;
   f->s[0] = 1.0;
   for (i = 1; i < g->np; i++)
-    f->s[i] = k * g->d[i - 1] / i;
+    f->s[i] *= k / i;
   f->s[g->np] = 0.0;
 
   /* int |w(k)|dk, k=0..inf */
-  f->I = 0.5; /* w(0) = 1 */ 
+  f->I = 0.5; /* w(0) = 1 */
   f->nz = 0;
   w1 = 0.0;
   for (i = f->np - 2; i > 0; --i) {

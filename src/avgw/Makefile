@@ -26,13 +26,14 @@ $(OBJSRL):      | .o.serial
 .o.serial:
 	mkdir .o.serial
 
-mkavgw:  $(OBJSRL) librism.a
-	$(CC) $(LFLAGS) -L$(RISMROOT)/lib $(OBJSRL) -lrism -largtable2 \
-         -lfftw3f -lfftw3 -lblas -lm -o $(RISMROOT)/bin/$@
+mkavgw:	librism.a ../../lib/libcpocketfft.a $(OBJSRL)
+	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
+         -lblas -lm -lcpocketfft -lstdc++ \
+         -o $(RISMROOT)/bin/$@
 
-mkavgw.MPI:      $(OBJMPI) librism-mpi.a
-	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L$(RISMROOT)/lib $(OBJMPI) \
-         -lrism-mpi -largtable2 -lfftw3f -lfftw3 -lblas -lm \
+mkavgw.MPI:	librism-mpi.a ../../lib/libcpocketfft.a $(OBJMPI)
+	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
+         -lrism-mpi -largtable2 -lblas -lm -lcpocketfft -lstdc++ \
          -o $(RISMROOT)/bin/$@
 
 librism.a:
@@ -41,7 +42,16 @@ librism.a:
 librism-mpi.a:
 	cd ../rism && make mpi
 
+../../lib/libcpocketfft.a:
+	{ \
+	cd ../../cpocketfft/src ; \
+	make ; \
+	cp libcpocketfft.a ../../lib ; \
+	cp fft.h ../../include ; \
+	}
+
 .PHONY: clean
 clean:
 	-rm -r $(OBJMPI) $(OBJSRL) $(RISMROOT)/bin/mkavgw $(RISMROOT)/bin/mkavgw.MPI
 	-rmdir .o.mpi .o.serial
+	-rm -rf ../../lib/libcpocketfft.a ../../include/fft.h
