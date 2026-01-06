@@ -13,9 +13,9 @@
 
 #include <fft.h>
 
-int avgw_func_init(const sgrid_t *g, avgw_func_t *f)
+int avgw_func_init(const grid_t *g, avgw_func_t *f)
 {
-  f->np = g->np + 1;
+  f->np = g->ngrid + 1;
   f->nz = 0;
   f->I = 0.0;
   f->s = (float *) malloc(3 * f->np * sizeof(float));
@@ -142,29 +142,27 @@ int avgw_write_info(avgw_mtx_t *W, FILE *f)
   return 0;
 }
 
-void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_func_t *f)
+void avgw_hist2aw(grid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_func_t *f)
 {
   float k, w0, w1;
   int m, i;
-  size_t n1;
   /* expand histogram */
   m = i0 + n;
-  if (m > g->np)
-    m = g->np;
+  if (m > g->ngrid)
+    m = g->ngrid;
   k = 1.0 / nsamp;
 
-  memset(f->s + 1, 0, (g->np - 1) * sizeof(float));
+  memset(f->s + 1, 0, g->n * sizeof(float));
   for (i = i0; i < m; i++)
     f->s[i] = k * h[i - i0] / i;
 
-  n1 = g->np - 1;
-  fftf_dst(1, &n1, 1, f->s + 1, f->s + 1, 1.0, 0);
+  fftf_dst(1, &g->n, 1, f->s + 1, f->s + 1, 1.0, 0);
 
-  k = 0.5 * g->np / M_PI;
+  k = 0.5 * g->ngrid / M_PI;
   f->s[0] = 1.0;
-  for (i = 1; i < g->np; i++)
+  for (i = 1; i < g->ngrid; i++)
     f->s[i] *= k / i;
-  f->s[g->np] = 0.0;
+  f->s[g->ngrid] = 0.0;
 
   /* int |w(k)|dk, k=0..inf */
   f->I = 0.5; /* w(0) = 1 */
@@ -181,7 +179,7 @@ void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_
   }
 }
 
-void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c)
+void avgw_itail(const grid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c)
 {
   int i, j, k, nz, nzmax;
   float w0, w1, lcut, lw;
@@ -191,7 +189,7 @@ void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, 
   nz = 0;
   w1 = 0.0;
   I1 = 0.0;
-  lcut = g->dt * i;
+  lcut = g->dk * i;
 
   nzmax = f->nz - AVGW_MINZEROS;
 
@@ -210,24 +208,24 @@ void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, 
         c[j].Icut = I1;
         c[j].nz = f->nz - nz;
         I1 -= fabs(w0 * w1 / (w0 - w1));
-        lcut = g->dt * (i + w0 / fabs(w0 - w1));
+        lcut = g->dk * (i + w0 / fabs(w0 - w1));
       }
       I1 += fabs(w0);
       w1 = w0;
       i--;
     }
-    lw = (s->p[j].np - 1) * s->p[j].dt;
+    lw = (s->p[j].np - 1) * s->p[j].dk;
     /* test it */
-    c[j].npcut = lcut < lw ? (int) (lcut / s->p[j].dt) - (fmodf(lcut, s->p[j].dt) <= FLT_EPSILON) : (s->p[j].np - 1);
+    c[j].npcut = lcut < lw ? (int) (lcut / s->p[j].dk) - (fmodf(lcut, s->p[j].dk) <= FLT_EPSILON) : (s->p[j].np - 1);
   }
 }
 
-void avgw_reshape(const sgrid_t *g, const avgw_func_t *f, const gridparam_t *p, const avgw_cutparam_t *c, float *fcut)
+void avgw_reshape(const grid_t *g, const avgw_func_t *f, const gridparam_t *p, const avgw_cutparam_t *c, float *fcut)
 {
   int i, k, each;
   float h;
 
-  h = p->dt / g->dt;
+  h = p->dk / g->dk;
   if (p->interp) {
     ssplint_uni(f->np, f->s, f->s2, c->npcut, h, h, fcut);
   } else {

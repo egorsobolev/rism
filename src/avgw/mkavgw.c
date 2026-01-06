@@ -64,7 +64,7 @@ int main(int narg, char **argv)
   avgw_shapes_t s;
   avgw_mtx_t W[GRID_SHAPES_MAX];
   avgw_cutparam_t awcut[GRID_SHAPES_MAX];
-  sgrid_t g;
+  grid_t g;
   dhist_t d;
   int i, j, k;
   avgw_func_t f;
@@ -135,7 +135,7 @@ int main(int narg, char **argv)
     goto err2;
   }
 
-  if (sgrid_init(d.np, d.dr, &g)) {
+  if (grid_init(d.np, d.dr, &g)) {
     perror("grid_init");
     goto err3;
   }
@@ -158,7 +158,7 @@ int main(int narg, char **argv)
     s.o[j] = i;
   }
   if (!rank) {
-    printf("Hist: np = %d, dR = %g (A), L = %g (A)%s\n", g.np, g.dr, g.np * g.dr, s.interp ? ", int": "");
+    printf("Hist: np = %ld, dR = %g (A), L = %g (A)%s\n", g.ngrid, g.dr, g.ngrid * g.dr, s.interp ? ", int": "");
     avgw_shapes_print(&s);
   }
 
@@ -353,7 +353,6 @@ int main(int narg, char **argv)
  err5:
   avgw_func_free(&f);
  err4:
-  //sgrid_free(&g);
  err3:
   dhist_free(&d);
  err2:

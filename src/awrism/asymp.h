@@ -1,7 +1,7 @@
 #ifndef __RISM_ASYMP_H
 #define __RISM_ASYMP_H
 
-#include "grid.h"
+#include <rism/grid.h>
 #include "water.h"
 #include "mol.h"
 
