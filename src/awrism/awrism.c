@@ -40,7 +40,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     printf("3.%d. SOLVENT\n", i+1);
     printf("   Natom     Nfun    Ngrid        T,K   rho,A^-3\n");
     printf("%8d %8d %8d %10g %10g\n", w.natom, w.nfun, w.ngrid, w.m.t / 1.9872e-3, w.m.rho);
- 
+
     rism->natv = w.natom;
     rism->nfun = rism->natv * rism->natu;
     rism->v.xvv = w.xvv;
@@ -50,11 +50,13 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     rism->v.t = w.m.t;
     rism->v.rho = w.m.rho;
 
-    if (ginit(w.ngrid, w.dr, &g)) {
-    }
+    ginit(w.ngrid, w.dr, &rism->ge);
+    ginit(w.ngrid / rism->reduc - 1, w.dr, &rism->gj);
+    eq->nZ = rism->nfun * rism->ge.n;
+    eq->nJx = rism->nfun * rism->gj.n;
     printf("4.%d. GRID\n", i+1);
     printf(" Ngrid      dr, A    dk, 1/A       L, A\n");
-    printf("%6d %10g %10g %10g\n", g.n, g.dr, g.dk, g.dr * g.n);
+    printf("%6ld %10g %10g %10g\n", rism->ge.ngrid, rism->ge.dr, rism->ge.dk, rism->ge.dr * rism->ge.ngrid);
 
     exitcode = avgw_read(gp->f[i].avgw_file, &rism->wuu, w.ngrid - 1, rism->reduc);
     if (exitcode) {
@@ -66,7 +68,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
     printf("5.%d. AVERAGE OMEGA\n", i+1);
     printf(" Ngrid\n");
     printf("%6d\n", rism->wuu.np);
-    if (((float) rism->wuu.dr != (float) g.dr) || (rism->wuu.np != g.n)) {
+    if (((float) rism->wuu.dr != (float) rism->ge.dr) || (rism->wuu.np != rism->ge.ngrid)) {
       printf("Grids of solvent functions and intramolecualar functions does not correspond\n");
       printf("ngrid=%d dr=%g\n", rism->wuu.np, rism->wuu.dr);
       exitcode = 5;
@@ -79,26 +81,12 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
       exitcode = 6;
       goto err2;
     }
-    
-    if (poten_mk(&g, &w, m, rism->ngalpha, &rism->puv)) {
+
+    if (poten_mk(&rism->ge, &w, m, rism->ngalpha, &rism->puv)) {
       printf("Error while initialize potential functions\n");
       exitcode = 5;
       goto err2;
     }
-
-    if (grid_eq_mk(g.n - 1, g.dr, &rism->ge)) {
-      printf("Error while initialize equation FFT plan\n");
-      exitcode = 6;
-      goto err3;
-    }
-    if (grid_jac_mk(g.n / rism->reduc - 1, g.dr, &rism->gj)) {
-      printf("Error while initialize Jacobi matrix FFT plan\n");
-      exitcode = 7;
-      goto err4;
-    }
-
-    eq->nZ = rism->nfun * rism->ge.n;
-    eq->nJx = rism->nfun * rism->gj.n;
 
     rism->dcdt = (float *) calloc(eq->nJx, sizeof(float));
     if (!rism->dcdt) {
@@ -126,7 +114,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
       }
     }
 
-    nn[0] = g.n - 1;
+    nn[0] = rism->ge.n;
     nn[1] = w.natom;
     nn[2] = m->natom;
     write_dmtx("tuv.bin", 3, nn, tuv);
@@ -159,15 +147,13 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
         l++;
       }
     }
-    nn[0] = g.n - 1;
+    nn[0] = rism->ge.n;
     nn[1] = w.natom;
     nn[2] = m->natom;
     write_dmtx("tuv.bin", 3, nn, tuv);
     */
     free(tuv);
     free(rism->dcdt);
-    grid_jac_del(&rism->gj);
-    grid_eq_del(&rism->ge);
     poten_del(&rism->puv);
     water_del(&w);
     avgw_del(&rism->wuu);
@@ -179,9 +165,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
  err6:
   free(rism->dcdt);
  err5:
-  grid_jac_del(&rism->gj);
  err4:
-  grid_eq_del(&rism->ge);
  err3:
   poten_del(&rism->puv);
  err2:
@@ -296,7 +280,7 @@ int main(int narg, char **argv)
   eq.Z = &rismaw_eq;
   eq.getb = &rismaw_getx;
   eq.putx = &rismaw_putx;
-  
+
   eq.nrprm.maxi = opt.nrmaxi->ival[0] - 1;
   eq.nrprm.etol = opt.etol->dval[0];
   eq.nrprm.rtol = opt.rtol->dval[0];
@@ -305,7 +289,7 @@ int main(int narg, char **argv)
 
   awrism_mgrid(&eq, &gp, &m);
 
-  
+
   exitcode = EXIT_SUCCESS;
  err3:
  err2:

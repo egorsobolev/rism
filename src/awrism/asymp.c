@@ -10,9 +10,9 @@ void asymp(const grid_t *g, const water_t *w, const mol_t *m, double alpha, doub
   a = -332.0 / w->m.t;
   b = 4.0 * M_PI;
   thi = -0.25 / (alpha * alpha);
-  np = g->n - 1;
+  np = g->ngrid - 1;
 
-  for (i = 1; i < g->n; i++) {
+  for (i = 1; i < g->ngrid; i++) {
     j = i - 1;
     r = i * g->dr;
     k = i * g->dk;

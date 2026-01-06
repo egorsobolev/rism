@@ -11,10 +11,10 @@ serial: librism.a
 mpi:    librism-mpi.a
 
 .o.serial/%.o:  %.c
-	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(CC) $(CFLAGS) -I ../../include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I ../../include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 
@@ -27,12 +27,11 @@ $(OBJSRL):      | .o.serial
 	mkdir .o.serial
 
 librism.a:	$(OBJSRL)
-	ar -r $(RISMROOT)/lib/$@ $(OBJSRL)
+	ar -r ../../lib/$@ $(OBJSRL)
 
 librism-mpi.a:	$(OBJMPI)
-	ar -r $(RISMROOT)/lib/$@ $(OBJMPI)
+	ar -r ../../lib/$@ $(OBJMPI)
 
 .PHONY:	clean
 clean:
-	-rm -r $(OBJMPI) $(OBJSRL) $(RISMROOT)/lib/librism.a $(RISMROOT)/lib/librism-mpi.a
-	-rmdir .o.mpi .o.serial
+	-rm -rf .o.mpi .o.serial ../../lib/librism.a ../../lib/librism-mpi.a

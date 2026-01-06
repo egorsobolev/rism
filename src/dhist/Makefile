@@ -11,10 +11,10 @@ serial: mkhist
 mpi:    mkhist.MPI
 
 .o.serial/%.o:  %.c
-	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(CC) $(CFLAGS) -I ../../include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I ../../include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 
@@ -27,13 +27,13 @@ $(OBJSRL):      | .o.serial
 	mkdir .o.serial
 
 mkhist:  $(OBJSRL) librism.a
-	$(CC) $(LFLAGS) -L$(RISMROOT)/lib $(OBJSRL) -lrism -largtable2 \
-         -lblas -lm -o $(RISMROOT)/bin/$@
+	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
+         -lblas -lm -o ../../bin/$@
 
 mkhist.MPI:      $(OBJMPI) librism-mpi.a
-	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L$(RISMROOT)/lib $(OBJMPI) \
+	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
          -lrism-mpi -largtable2 -lblas -lm \
-         -o $(RISMROOT)/bin/$@
+         -o ../../bin/$@
 
 librism.a:
 	cd ../rism && make serial
@@ -43,5 +43,4 @@ librism-mpi.a:
 
 .PHONY: clean
 clean:
-	-rm -r $(OBJMPI) $(OBJSRL) $(RISMROOT)/bin/mkhist $(RISMROOT)/bin/mkhist.MPI
-	-rmdir .o.mpi .o.serial
+	-rm -rf .o.mpi .o.serial ../../bin/mkhist ../../bin/mkhist.MPI

@@ -130,7 +130,7 @@ int main(int narg, char **argv)
     set_mpi_error(err);
     print_error("MPI_File_open:");
     goto err1;
-  }  
+  }
 #else
   in = fopen(opt_in->filename[0], "rb");
   if (!in) {
@@ -143,7 +143,7 @@ int main(int narg, char **argv)
     print_error("dhist_read_hdr");
     goto err2;
   }
-  
+
   if (sgrid_init(d.np, d.dr, &g)) {
     perror("grid_init");
     goto err3;
@@ -170,7 +170,7 @@ int main(int narg, char **argv)
     printf("Hist: np = %d, dR = %g (A), L = %g (A)%s\n", g.np, g.dr, g.np * g.dr, s.interp ? ", int": "");
     avgw_shapes_print(&s);
   }
-   
+
   if (avgw_func_init(&g, &f)) {
     perror("avgw_func_init");
     goto err4;
@@ -362,7 +362,7 @@ int main(int narg, char **argv)
  err5:
   avgw_func_free(&f);
  err4:
-  sgrid_free(&g);
+  //sgrid_free(&g);
  err3:
   dhist_free(&d);
  err2:

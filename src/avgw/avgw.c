@@ -11,14 +11,14 @@
 #include <math.h>
 #include <float.h>
 
-#include <fftw3.h>
+#include <fft.h>
 
 int avgw_func_init(const sgrid_t *g, avgw_func_t *f)
 {
   f->np = g->np + 1;
   f->nz = 0;
   f->I = 0.0;
-  f->s = (float *) calloc(3 * f->np, sizeof(float));
+  f->s = (float *) malloc(3 * f->np * sizeof(float));
   if (!f->s)
     return -1;
   f->s2 = f->s + f->np;
@@ -33,16 +33,17 @@ void avgw_func_free(avgw_func_t *f)
 
 int avgw_mtx_init(int n, gridparam_t *p, int nfun, avgw_mtx_t *W)
 {
-  int nb, i, *m;
+  int i, *m;
+  size_t nb;
   nb = sizeof(float) + 2 * sizeof(int);
-  m = (int *) calloc(nfun * n, nb);
+  m = (int *) malloc(nfun * n * nb);
   if (!m)
     return -1;
   for (i = 0; i < n; i++) {
     W[i].npcut = m;
     W[i].nz = W[i].npcut + nfun;
     W[i].Icut = (float *) (W[i].nz + nfun);
-    m = (int *) (W[i].Icut + nfun); 
+    m = (int *) (W[i].Icut + nfun);
     W[i].nfun = nfun;
     W[i].dr = p[i].dr;
     W[i].np = p[i].np;
@@ -62,7 +63,7 @@ int avgw_outbuf_init(int n, const gridparam_t *p, avgw_outbuf_t *b)
   np = 0;
   for (i = 0; i < n; i++)
     np += p[i].np * AVGW_BUFSIZE;
-  m = calloc(np, sizeof(float));
+  m = (float *) malloc(np * sizeof(float));
   if (!m)
     return -1;
 
@@ -145,26 +146,28 @@ void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_
 {
   float k, w0, w1;
   int m, i;
+  size_t n1;
   /* expand histogram */
-  memset(g->d, 0, (g->np - 1) * sizeof(float));
   m = i0 + n;
   if (m > g->np)
     m = g->np;
   k = 1.0 / nsamp;
-  for (i = i0; i < m; i++)
-    g->d[i - 1] = k * h[i - i0] / i;
 
-  /* make fft */
-  fftwf_execute(g->p);
- 
+  memset(f->s + 1, 0, (g->np - 1) * sizeof(float));
+  for (i = i0; i < m; i++)
+    f->s[i] = k * h[i - i0] / i;
+
+  n1 = g->np - 1;
+  fftf_dst(1, &n1, 1, f->s + 1, f->s + 1, 1.0, 0);
+
   k = 0.5 * g->np / M_PI;
   f->s[0] = 1.0;
   for (i = 1; i < g->np; i++)
-    f->s[i] = k * g->d[i - 1] / i;
+    f->s[i] *= k / i;
   f->s[g->np] = 0.0;
 
   /* int |w(k)|dk, k=0..inf */
-  f->I = 0.5; /* w(0) = 1 */ 
+  f->I = 0.5; /* w(0) = 1 */
   f->nz = 0;
   w1 = 0.0;
   for (i = f->np - 2; i > 0; --i) {
@@ -178,7 +181,7 @@ void avgw_hist2aw(sgrid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_
   }
 }
 
-void avgw_itail(const sgrid_t *g, const avgw_func_t *f, avgw_shapes_t *s, avgw_cutparam_t *c)
+void avgw_itail(const sgrid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c)
 {
   int i, j, k, nz, nzmax;
   float w0, w1, lcut, lw;
@@ -188,6 +191,7 @@ void avgw_itail(const sgrid_t *g, const avgw_func_t *f, avgw_shapes_t *s, avgw_c
   nz = 0;
   w1 = 0.0;
   I1 = 0.0;
+  lcut = g->dt * i;
 
   nzmax = f->nz - AVGW_MINZEROS;
 

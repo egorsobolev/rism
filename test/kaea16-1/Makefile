@@ -9,10 +9,10 @@ kaea1_straj.bin: mdp_10_amb.mdcrd
 kaea1_hist.bin:	kaea1_straj.bin
 	../../bin/mkhist kaea1_straj.bin kaea1_hist.bin
 
-aw-05-2048-056.bin:	kaea1_hist.bin
+kaea1_aw-05-2048-056.bin:	kaea1_hist.bin
 	../../bin/mkavgw kaea1_hist.bin -s 0.05:2048:0.056 kaea1_aw
 
-rismaw:	aw-05-2048-056.bin
+rismaw:	kaea1_aw-05-2048-056.bin
 	../../bin/awrism -p kaea1.rtxt \
 	                 -g kaea1_aw-05-2048-056.bin:../tip3p-dr056-np2048.rbin \
 	                 kaea1

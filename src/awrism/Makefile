@@ -11,10 +11,10 @@ serial: awrism
 mpi:    awrism.MPI
 
 .o.serial/%.o:  %.c
-	$(CC) $(CFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(CC) $(CFLAGS) -I ../../include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I $(RISMROOT)/include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I ../../include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 
@@ -26,14 +26,15 @@ $(OBJSRL):      | .o.serial
 .o.serial:
 	mkdir .o.serial
 
-awrism:  $(OBJSRL) librism.a
-	$(CC) $(LFLAGS) -L$(RISMROOT)/lib $(OBJSRL) -lrism -largtable2 \
-         -lfftw3f -lfftw3 -lblas -lm -o $(RISMROOT)/bin/$@
+awrism:  librism.a ../../lib/libcpocketfft.a $(OBJSRL)
+	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
+         -lblas -lm -lcpocketfft -lstdc++ \
+         -o ../../bin/$@
 
-awrism.MPI:      $(OBJMPI) librism-mpi.a
-	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L$(RISMROOT)/lib $(OBJMPI) \
-         -lrism-mpi -largtable2 -lfftw3f -lfftw3 -lblas -lm \
-         -o $(RISMROOT)/bin/$@
+awrism.MPI:      librism-mpi.a ../../lib/libcpocketfft.a $(OBJMPI)
+	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
+         -lrism-mpi -largtable2 -lblas -lm -lcpocketfft -lstdc++ \
+         -o ../../bin/$@
 
 librism.a:
 	cd ../rism && make serial
@@ -41,7 +42,15 @@ librism.a:
 librism-mpi.a:
 	cd ../rism && make mpi
 
+../../lib/libcpocketfft.a:
+	{ \
+	cd ../../cpocketfft/src ; \
+	make ; \
+	cp libcpocketfft.a ../../lib ; \
+	cp fft.h ../../include ; \
+	}
+
 .PHONY: clean
 clean:
-	-rm -r $(OBJMPI) $(OBJSRL) $(RISMROOT)/bin/awrism $(RISMROOT)/bin/awrism.MPI
-	-rmdir .o.mpi .o.serial
+	-rm -rf .o.mpi .o.serial ../../bin/awrism ../../bin/awrism.MPI
+	-rm -rf ../../lib/libcpocketfft.a ../../include/fft.h
