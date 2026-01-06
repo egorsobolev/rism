@@ -18,7 +18,7 @@ int avgw_func_init(const sgrid_t *g, avgw_func_t *f)
   f->np = g->np + 1;
   f->nz = 0;
   f->I = 0.0;
-  f->s = (float *) calloc(3 * f->np, sizeof(float));
+  f->s = (float *) malloc(3 * f->np * sizeof(float));
   if (!f->s)
     return -1;
   f->s2 = f->s + f->np;
@@ -33,16 +33,17 @@ void avgw_func_free(avgw_func_t *f)
 
 int avgw_mtx_init(int n, gridparam_t *p, int nfun, avgw_mtx_t *W)
 {
-  int nb, i, *m;
+  int i, *m;
+  size_t nb;
   nb = sizeof(float) + 2 * sizeof(int);
-  m = (int *) calloc(nfun * n, nb);
+  m = (int *) malloc(nfun * n * nb);
   if (!m)
     return -1;
   for (i = 0; i < n; i++) {
     W[i].npcut = m;
     W[i].nz = W[i].npcut + nfun;
     W[i].Icut = (float *) (W[i].nz + nfun);
-    m = (int *) (W[i].Icut + nfun); 
+    m = (int *) (W[i].Icut + nfun);
     W[i].nfun = nfun;
     W[i].dr = p[i].dr;
     W[i].np = p[i].np;
@@ -62,7 +63,7 @@ int avgw_outbuf_init(int n, const gridparam_t *p, avgw_outbuf_t *b)
   np = 0;
   for (i = 0; i < n; i++)
     np += p[i].np * AVGW_BUFSIZE;
-  m = calloc(np, sizeof(float));
+  m = (float *) malloc(np * sizeof(float));
   if (!m)
     return -1;
 
