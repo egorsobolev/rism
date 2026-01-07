@@ -22,7 +22,7 @@
 
 int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 {
-	int i, j, l, u, exitcode, nfun, np, maxit, incu;
+	int i, j, l, u, k, exitcode, nfun, np, maxit, incu;
 	water_t w;
 	grid_t g;
 	int nn[3], n;
@@ -130,8 +130,8 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 		l = 0;
 		for (u = 0; u < rism->natu; u++) {
 			j = rism->puv.atyp[u] * incu;
-			for (i = 0; i < incu; i++) {
-				tuv[l] = -rism->puv.asympr[j + i];
+			for (k = 0; k < incu; k++) {
+				tuv[l] = -rism->puv.asympr[j + k];
 				l++;
 			}
 		}
