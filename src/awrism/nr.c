@@ -17,7 +17,7 @@
 
 
 /* + 5 * n * sizeof(float)*/
-int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float *tol, int *it);
+int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float *tol, int *it, float *workspace);
 
 /* Eisenstat, Walker */
 typedef struct
@@ -98,10 +98,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 	*/
 	v = sqrt(n);
 
-	b = (float *) malloc(2 * m * sizeof(float) + 3 * n * sizeof(double));
-	if (!b) {
-		return -1;
-	}
+	b = eq->nr_solver_data;
 	x = b + m;
 	d = (double *) (x + m);
 	s = d + n;
@@ -127,7 +124,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 		memset(x, 0, m * sizeof(float));
 
 		lntmi = walltime() * 1e-6;
-		flag = bicgstab(m, b, x, eq->Jx, eq->p, &eps, &nlit);
+		flag = bicgstab(m, b, x, eq->Jx, eq->p, &eps, &nlit, eq->linear_solver_data);
 		lntmi = walltime() * 1e-6 - lntmi;
 		lntm += lntmi;
 
@@ -171,8 +168,6 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 		flush;
 		++i;
 	}
-
-	free(b);
 
 	*maxit = i;
 	*rtol = err;

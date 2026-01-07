@@ -5,16 +5,14 @@
 typedef int Jx_func(void *eq_data, const float *x, float *r);
 
 /* + 5 * n * sizeof(float)*/
-int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float *tol, int *it)
+int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float *tol, int *it, float *workspace)
 {
 	float *r, *h, *p, *v, *s;
 	float rTh, rTr, normr, norms, alpha, beta, omega, sTr;
 	float err, normb;
 	int its, maxit;
 
-	r = calloc(5 * N, sizeof(float));
-	if (!r) {
-	}
+	r = workspace;
 	h = r + N;
 	p = h + N;
 	v = p + N;
@@ -39,7 +37,6 @@ int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float 
 	if (normr <= err) {
 		*tol = normr / normb;
 		*it = its;
-		free(r);
 		return 0;
 	}
 	while (its < maxit) {
@@ -54,7 +51,6 @@ int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float 
 			cblas_saxpy(N,-alpha,p,1,x,1);
 			*tol = norms / normb;
 			*it = its;
-			free(r);
 			return 0;
 		}
 
@@ -76,13 +72,11 @@ int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float 
 		if (normr <= err) {
 			*tol = normr / normb;
 			*it = its;
-			free(r);
 			return 0;
 		}
 		if (omega == 0.0f) {
 			*tol = normr / normb;
 			*it = its;
-			free(r);
 			return 2;
 		}
 
@@ -91,7 +85,6 @@ int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float 
 		if (rTh == 0.0f) {
 			*tol = normr / normb;
 			*it = its;
-			free(r);
 			return 3;
 		}
 		beta*=rTh;
@@ -100,7 +93,6 @@ int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float 
 		cblas_saxpy(N,1.,r,1,p,1);
 		cblas_saxpy(N,-beta*omega,v,1,p,1);
 	}
-	free(r);
 
 	*tol = rTr / normb;
 	*it = its;

@@ -104,7 +104,20 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 		rism->Jx_data = rism->dcdt + eq->nJx;
 		rism->Z_data = (double *) (rism->Jx_data + eq->nJx);
 
-		tuv = (double *) calloc(2 * eq->nZ, sizeof(double));
+		/*
+		 nr_solver_data: float[2 * eq->nJx] + doulbe[3 * eq->nZ]
+		 linear_solver_data: float[5 * eq->nJx]
+		 */
+		eq->linear_solver_data = (float *) malloc(7 * eq->nJx * sizeof(float) +
+		                                          3 * eq->nZ * sizeof(double));
+		if (!eq->linear_solver_data) {
+			printf("Error while allocating solver's workspace\n");
+			exitcode = 7;
+			goto err4;
+		}
+		eq->nr_solver_data = eq->linear_solver_data + 5 * eq->nJx;
+
+		tuv = (double *) malloc(2 * eq->nZ * sizeof(double));
 		if (!tuv) {
 			printf("Error while allocationg tuv\n");
 			exitcode = 9;
@@ -161,6 +174,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 		nn[2] = m->natom;
 		write_dmtx("tuv.bin", 3, nn, tuv);
 		*/
+		free(eq->linear_solver_data);
 		free(tuv);
 		free(rism->dcdt);
 		poten_del(&rism->puv);
@@ -173,6 +187,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 	free(tuv);
  err6:
  err5:
+	free(eq->linear_solver_data);
  err4:
 	free(rism->dcdt);
  err3:
