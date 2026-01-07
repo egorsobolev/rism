@@ -28,12 +28,12 @@ $(OBJSRL):      | .o.serial
 
 awrism:  librism.a ../../lib/libcpocketfft.a $(OBJSRL)
 	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
-		-lblas -lm -lcpocketfft -lstdc++ \
+		-lopenblas -lm -lcpocketfft -lstdc++ \
 		-o ../../bin/$@
 
 awrism.MPI:      librism-mpi.a ../../lib/libcpocketfft.a $(OBJMPI)
 	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
-		-lrism-mpi -largtable2 -lblas -lm -lcpocketfft -lstdc++ \
+		-lrism-mpi -largtable2 -lopenblas -lm -lcpocketfft -lstdc++ \
 		-o ../../bin/$@
 
 librism.a:

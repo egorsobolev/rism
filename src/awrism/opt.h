@@ -10,7 +10,7 @@ struct RISM_OPTIONS
 	struct arg_file *prefix, *mol;
 	struct arg_dbl *ngalpha, *rtol, *etol;
 	struct arg_int *reduc, *nrmaxi, *lmaxi;
-	struct arg_int *narm;
+	struct arg_int *narm, *nthr;
 	struct arg_end *end;
 };
 typedef struct RISM_OPTIONS rism_opt_t;
