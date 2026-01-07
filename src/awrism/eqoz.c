@@ -52,10 +52,7 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
 	incu = p->natv * g->n;
 	np = p->natu * incu;
 
-	r = (double *) malloc(np * sizeof(double));
-	if (!r) {
-		return -1;
-	}
+	r = p->Z_data;
 
 	/* cuv = C[tuv(r)] */
 	p->closure(p, tuv, r, p->dcdt, en);
@@ -143,8 +140,6 @@ int rismaw_eq(void *prm, const double *tuv, double *d, double *en)
 	/* d = d - tuv = ifft(wuu * fft(cuv) * xvv - fft(cuv)) - tuv */
 	cblas_daxpy(np, -1.0, tuv, 1, d, 1);
 
-	free(r);
-
 	return 0;
 }
 
@@ -160,10 +155,7 @@ int rismaw_Jx(void *prm, const float *x, float *r)
 	incu = p->natv * g->n;
 	np = p->natu * incu;
 
-	d = (float *) malloc(np * sizeof(float));
-	if (!d) {
-		return -1;
-	}
+	d = p->Jx_data;
 
 	/* Jx = fft(w * fft(dcdt * x) * xvv - fft(dcdt * x)) - x */
 
@@ -230,8 +222,6 @@ int rismaw_Jx(void *prm, const float *x, float *r)
 			l += g->n;
 		}
 	}
-
-	free(d);
 
 	return 0;
 }

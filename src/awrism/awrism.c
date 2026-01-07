@@ -89,12 +89,20 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 			goto err2;
 		}
 
-		rism->dcdt = (float *) calloc(eq->nJx, sizeof(float));
+		/*
+		 dcdt: float[eq->nJx]
+		 Jx_data: float[eq->nJx]
+		 Z_data: double[eq->nZ]
+		 */
+		rism->dcdt = (float *) malloc(2 * eq->nJx * sizeof(float) +
+		                              eq->nZ * sizeof(double));
 		if (!rism->dcdt) {
-			printf("Error while allocating dcdt\n");
+			printf("Error while allocating dcdt and equation workspace\n");
 			exitcode = 8;
-			goto err5;
+			goto err3;
 		}
+		rism->Jx_data = rism->dcdt + eq->nJx;
+		rism->Z_data = (double *) (rism->Jx_data + eq->nJx);
 
 		tuv = (double *) calloc(2 * eq->nZ, sizeof(double));
 		if (!tuv) {
@@ -164,9 +172,9 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
  err7:
 	free(tuv);
  err6:
-	free(rism->dcdt);
  err5:
  err4:
+	free(rism->dcdt);
  err3:
 	poten_del(&rism->puv);
  err2:
