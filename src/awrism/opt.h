@@ -5,13 +5,13 @@
 
 struct RISM_OPTIONS
 {
-  struct arg_str *grid, *closure;
-  struct arg_lit *help, *ver;
-  struct arg_file *prefix, *mol;
-  struct arg_dbl *ngalpha, *rtol, *etol;
-  struct arg_int *reduc, *nrmaxi, *lmaxi;
-  struct arg_int *narm;
-  struct arg_end *end;
+	struct arg_str *grid, *closure;
+	struct arg_lit *help, *ver;
+	struct arg_file *prefix, *mol;
+	struct arg_dbl *ngalpha, *rtol, *etol;
+	struct arg_int *reduc, *nrmaxi, *lmaxi;
+	struct arg_int *narm;
+	struct arg_end *end;
 };
 typedef struct RISM_OPTIONS rism_opt_t;
 
@@ -20,15 +20,15 @@ typedef struct RISM_OPTIONS rism_opt_t;
 
 struct GridFiles
 {
-  const char *avgw_file;
-  const char *solv_file;
+	const char *avgw_file;
+	const char *solv_file;
 };
 
 struct GridParam
 {
-  int n;
-  int o[GRID_MAX];
-  struct GridFiles f[GRID_MAX];
+	int n;
+	int o[GRID_MAX];
+	struct GridFiles f[GRID_MAX];
 };
 typedef struct GridParam grid_param_t;
 

@@ -17,38 +17,38 @@
 
 struct AVGW_FUNC
 {
-  int np;
-  int nz;
-  double I;
-  float *s;
-  float *s2;
-  float *u;
+	int np;
+	int nz;
+	double I;
+	float *s;
+	float *s2;
+	float *u;
 };
 typedef struct AVGW_FUNC avgw_func_t;
 
 struct AVGW_CUTPARAM
 {
-  int nz;
-  int npcut;
-  float Icut;
+	int nz;
+	int npcut;
+	float Icut;
 };
 typedef struct AVGW_CUTPARAM avgw_cutparam_t;
 
 struct AVGW_MTX
 {
-  int np;
-  float dr;
-  int nfun;
-  int *npcut;
-  int *nz;
-  float *Icut;
+	int np;
+	float dr;
+	int nfun;
+	int *npcut;
+	int *nz;
+	float *Icut;
 };
 typedef struct AVGW_MTX avgw_mtx_t;
 
 struct AVGW_OUTBUF
 {
-  float *mem;
-  float *cur;
+	float *mem;
+	float *cur;
 };
 typedef struct AVGW_OUTBUF avgw_outbuf_t;
 

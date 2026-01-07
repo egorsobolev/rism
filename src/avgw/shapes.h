@@ -13,25 +13,25 @@
 
 struct GRIDPARAM
 {
-  int np;
-  double dr;
-  double dk;
-  double trun;
-  double l;
-  int interp;
+	int np;
+	double dr;
+	double dk;
+	double trun;
+	double l;
+	int interp;
 };
 typedef struct GRIDPARAM gridparam_t;
 
 struct AVGW_SHAPES
 {
-  int n;
-  int interp;
-  gridparam_t p[GRID_SHAPES_MAX];
-  int o[GRID_SHAPES_MAX];
+	int n;
+	int interp;
+	gridparam_t p[GRID_SHAPES_MAX];
+	int o[GRID_SHAPES_MAX];
 #ifdef MPI
-  MPI_File f[GRID_SHAPES_MAX];
+	MPI_File f[GRID_SHAPES_MAX];
 #else
-  FILE *f[GRID_SHAPES_MAX];
+	FILE *f[GRID_SHAPES_MAX];
 #endif
 };
 typedef struct AVGW_SHAPES avgw_shapes_t;

@@ -15,225 +15,225 @@
 
 int avgw_func_init(const grid_t *g, avgw_func_t *f)
 {
-  f->np = g->ngrid + 1;
-  f->nz = 0;
-  f->I = 0.0;
-  f->s = (float *) malloc(3 * f->np * sizeof(float));
-  if (!f->s)
-    return -1;
-  f->s2 = f->s + f->np;
-  f->u = f->s2 + f->np;
-  return 0;
+	f->np = g->ngrid + 1;
+	f->nz = 0;
+	f->I = 0.0;
+	f->s = (float *) malloc(3 * f->np * sizeof(float));
+	if (!f->s)
+		return -1;
+	f->s2 = f->s + f->np;
+	f->u = f->s2 + f->np;
+	return 0;
 }
 
 void avgw_func_free(avgw_func_t *f)
 {
-  free(f->s);
+	free(f->s);
 }
 
 int avgw_mtx_init(int n, gridparam_t *p, int nfun, avgw_mtx_t *W)
 {
-  int i, *m;
-  size_t nb;
-  nb = sizeof(float) + 2 * sizeof(int);
-  m = (int *) malloc(nfun * n * nb);
-  if (!m)
-    return -1;
-  for (i = 0; i < n; i++) {
-    W[i].npcut = m;
-    W[i].nz = W[i].npcut + nfun;
-    W[i].Icut = (float *) (W[i].nz + nfun);
-    m = (int *) (W[i].Icut + nfun);
-    W[i].nfun = nfun;
-    W[i].dr = p[i].dr;
-    W[i].np = p[i].np;
-  }
-  return 0;
+	int i, *m;
+	size_t nb;
+	nb = sizeof(float) + 2 * sizeof(int);
+	m = (int *) malloc(nfun * n * nb);
+	if (!m)
+		return -1;
+	for (i = 0; i < n; i++) {
+		W[i].npcut = m;
+		W[i].nz = W[i].npcut + nfun;
+		W[i].Icut = (float *) (W[i].nz + nfun);
+		m = (int *) (W[i].Icut + nfun);
+		W[i].nfun = nfun;
+		W[i].dr = p[i].dr;
+		W[i].np = p[i].np;
+	}
+	return 0;
 }
 
 void avgw_mtx_free(avgw_mtx_t *W)
 {
-  free(W[0].npcut);
+	free(W[0].npcut);
 }
 
 int avgw_outbuf_init(int n, const gridparam_t *p, avgw_outbuf_t *b)
 {
-  int i, np;
-  float *m;
-  np = 0;
-  for (i = 0; i < n; i++)
-    np += p[i].np * AVGW_BUFSIZE;
-  m = (float *) malloc(np * sizeof(float));
-  if (!m)
-    return -1;
+	int i, np;
+	float *m;
+	np = 0;
+	for (i = 0; i < n; i++)
+		np += p[i].np * AVGW_BUFSIZE;
+	m = (float *) malloc(np * sizeof(float));
+	if (!m)
+		return -1;
 
-  for (i = 0; i < n; i++) {
-    b[i].mem = b[i].cur = m;
-    m += p[i].np * AVGW_BUFSIZE;
-      /*
-      b[i].n = 0;*/
-  }
-  return 0;
+	for (i = 0; i < n; i++) {
+		b[i].mem = b[i].cur = m;
+		m += p[i].np * AVGW_BUFSIZE;
+			/*
+			b[i].n = 0;*/
+	}
+	return 0;
 }
 
 int avgw_outbuf_free(avgw_outbuf_t *b)
 {
-  free(b[0].mem);
+	free(b[0].mem);
 }
 
 #ifdef MPI
 int avgw_write_hdr(avgw_mtx_t *W, MPI_File f)
 {
-  static MPI_Datatype tp[] = {MPI_INT, MPI_FLOAT, MPI_INT};
-  static int len[] = {1, 1, 1};
-  static MPI_Aint disp[] = {offsetof(avgw_mtx_t, np), offsetof(avgw_mtx_t, dr), offsetof(avgw_mtx_t, nfun)};
-  MPI_Datatype hdrtype;
-  int err;
+	static MPI_Datatype tp[] = {MPI_INT, MPI_FLOAT, MPI_INT};
+	static int len[] = {1, 1, 1};
+	static MPI_Aint disp[] = {offsetof(avgw_mtx_t, np), offsetof(avgw_mtx_t, dr), offsetof(avgw_mtx_t, nfun)};
+	MPI_Datatype hdrtype;
+	int err;
 
-  err = MPI_Type_create_struct(3, len, disp, tp, &hdrtype);
-  if (err)
-    goto err1;
-  err = MPI_Type_commit(&hdrtype);
-  if (err)
-    goto err1;
-  err = MPI_File_seek(f, 0, MPI_SEEK_SET);
-  if (err)
-    goto err1;
-  err = MPI_File_write(f, W, 1, hdrtype, MPI_STATUS_IGNORE);
-  if (err)
-    goto err1;
-  err = MPI_Type_free(&hdrtype);
-  if (err)
-    goto err1;
-  return 0;
+	err = MPI_Type_create_struct(3, len, disp, tp, &hdrtype);
+	if (err)
+		goto err1;
+	err = MPI_Type_commit(&hdrtype);
+	if (err)
+		goto err1;
+	err = MPI_File_seek(f, 0, MPI_SEEK_SET);
+	if (err)
+		goto err1;
+	err = MPI_File_write(f, W, 1, hdrtype, MPI_STATUS_IGNORE);
+	if (err)
+		goto err1;
+	err = MPI_Type_free(&hdrtype);
+	if (err)
+		goto err1;
+	return 0;
 
  err1:
-  set_mpi_error(err);
-  return -1;
+	set_mpi_error(err);
+	return -1;
 }
 #else
 int avgw_write_hdr(avgw_mtx_t *W, FILE *f)
 {
-  if (fseek(f, 0, SEEK_SET))
-    goto err1;
-  if (fwrite(&W->np, sizeof(int), 1, f) != 1)
-    goto err1;
-  if (fwrite(&W->dr, sizeof(float), 1, f) != 1)
-    goto err1;
-  if (fwrite(&W->nfun, sizeof(int), 1, f) != 1)
-    goto err1;
-  /*
-  if (fwrite(W->npcut, sizeof(int), W->nfun, f) != W->nfun)
-    return -1;
-  */
-  return 0;
+	if (fseek(f, 0, SEEK_SET))
+		goto err1;
+	if (fwrite(&W->np, sizeof(int), 1, f) != 1)
+		goto err1;
+	if (fwrite(&W->dr, sizeof(float), 1, f) != 1)
+		goto err1;
+	if (fwrite(&W->nfun, sizeof(int), 1, f) != 1)
+		goto err1;
+	/*
+	if (fwrite(W->npcut, sizeof(int), W->nfun, f) != W->nfun)
+		return -1;
+	*/
+	return 0;
  err1:
-  set_std_error();
-  return -1;
+	set_std_error();
+	return -1;
 }
 #endif
 
 int avgw_write_info(avgw_mtx_t *W, FILE *f)
 {
-  if (fwrite(W->nz, sizeof(int), W->nfun, f) != W->nfun)
-    return -1;
-  if (fwrite(W->Icut, sizeof(float), W->nfun, f) != W->nfun)
-    return -1;
-  return 0;
+	if (fwrite(W->nz, sizeof(int), W->nfun, f) != W->nfun)
+		return -1;
+	if (fwrite(W->Icut, sizeof(float), W->nfun, f) != W->nfun)
+		return -1;
+	return 0;
 }
 
 void avgw_hist2aw(grid_t *g, int n, int i0, int nsamp, const unsigned *h, avgw_func_t *f)
 {
-  float k, w0, w1;
-  int m, i;
-  /* expand histogram */
-  m = i0 + n;
-  if (m > g->ngrid)
-    m = g->ngrid;
-  k = 1.0 / nsamp;
+	float k, w0, w1;
+	int m, i;
+	/* expand histogram */
+	m = i0 + n;
+	if (m > g->ngrid)
+		m = g->ngrid;
+	k = 1.0 / nsamp;
 
-  memset(f->s + 1, 0, g->n * sizeof(float));
-  for (i = i0; i < m; i++)
-    f->s[i] = k * h[i - i0] / i;
+	memset(f->s + 1, 0, g->n * sizeof(float));
+	for (i = i0; i < m; i++)
+		f->s[i] = k * h[i - i0] / i;
 
-  fftf_dst(1, &g->n, 1, f->s + 1, f->s + 1, 1.0, 0);
+	fftf_dst(1, &g->n, 1, f->s + 1, f->s + 1, 1.0, 0);
 
-  k = 0.5 * g->ngrid / M_PI;
-  f->s[0] = 1.0;
-  for (i = 1; i < g->ngrid; i++)
-    f->s[i] *= k / i;
-  f->s[g->ngrid] = 0.0;
+	k = 0.5 * g->ngrid / M_PI;
+	f->s[0] = 1.0;
+	for (i = 1; i < g->ngrid; i++)
+		f->s[i] *= k / i;
+	f->s[g->ngrid] = 0.0;
 
-  /* int |w(k)|dk, k=0..inf */
-  f->I = 0.5; /* w(0) = 1 */
-  f->nz = 0;
-  w1 = 0.0;
-  for (i = f->np - 2; i > 0; --i) {
-    w0 = f->s[i];
-    if (w1 == 0.0 || (w0 * w1) < 0.0) {
-      f->I -= fabs(w0 * w1 / (w0 - w1));
-      f->nz++;
-    }
-    f->I += fabs(w0);
-    w1 = w0;
-  }
+	/* int |w(k)|dk, k=0..inf */
+	f->I = 0.5; /* w(0) = 1 */
+	f->nz = 0;
+	w1 = 0.0;
+	for (i = f->np - 2; i > 0; --i) {
+		w0 = f->s[i];
+		if (w1 == 0.0 || (w0 * w1) < 0.0) {
+			f->I -= fabs(w0 * w1 / (w0 - w1));
+			f->nz++;
+		}
+		f->I += fabs(w0);
+		w1 = w0;
+	}
 }
 
 void avgw_itail(const grid_t *g, const avgw_func_t *f, const avgw_shapes_t *s, avgw_cutparam_t *c)
 {
-  int i, j, k, nz, nzmax;
-  float w0, w1, lcut, lw;
-  double I1, err;
+	int i, j, k, nz, nzmax;
+	float w0, w1, lcut, lw;
+	double I1, err;
 
-  i = f->np - 2;
-  nz = 0;
-  w1 = 0.0;
-  I1 = 0.0;
-  lcut = g->dk * i;
+	i = f->np - 2;
+	nz = 0;
+	w1 = 0.0;
+	I1 = 0.0;
+	lcut = g->dk * i;
 
-  nzmax = f->nz - AVGW_MINZEROS;
+	nzmax = f->nz - AVGW_MINZEROS;
 
-  for (k = 0; k < s->n; k++) {
-    j = s->o[k];
-    c[j].npcut = i;
-    c[j].Icut = I1;
-    c[j].nz = f->nz - nz;
+	for (k = 0; k < s->n; k++) {
+		j = s->o[k];
+		c[j].npcut = i;
+		c[j].Icut = I1;
+		c[j].nz = f->nz - nz;
 
-    err = f->I * s->p[j].trun;
-    /* int |w(k)|dk, k=icut..inf */
-    while (i >= 0 && I1 < err && nz <= nzmax) {
-      w0 = f->s[i];
-      if (w1 == 0.0 || (w0 * w1) < 0.0) {
-        nz++;
-        c[j].Icut = I1;
-        c[j].nz = f->nz - nz;
-        I1 -= fabs(w0 * w1 / (w0 - w1));
-        lcut = g->dk * (i + w0 / fabs(w0 - w1));
-      }
-      I1 += fabs(w0);
-      w1 = w0;
-      i--;
-    }
-    lw = (s->p[j].np - 1) * s->p[j].dk;
-    /* test it */
-    c[j].npcut = lcut < lw ? (int) (lcut / s->p[j].dk) - (fmodf(lcut, s->p[j].dk) <= FLT_EPSILON) : (s->p[j].np - 1);
-  }
+		err = f->I * s->p[j].trun;
+		/* int |w(k)|dk, k=icut..inf */
+		while (i >= 0 && I1 < err && nz <= nzmax) {
+			w0 = f->s[i];
+			if (w1 == 0.0 || (w0 * w1) < 0.0) {
+				nz++;
+				c[j].Icut = I1;
+				c[j].nz = f->nz - nz;
+				I1 -= fabs(w0 * w1 / (w0 - w1));
+				lcut = g->dk * (i + w0 / fabs(w0 - w1));
+			}
+			I1 += fabs(w0);
+			w1 = w0;
+			i--;
+		}
+		lw = (s->p[j].np - 1) * s->p[j].dk;
+		/* test it */
+		c[j].npcut = lcut < lw ? (int) (lcut / s->p[j].dk) - (fmodf(lcut, s->p[j].dk) <= FLT_EPSILON) : (s->p[j].np - 1);
+	}
 }
 
 void avgw_reshape(const grid_t *g, const avgw_func_t *f, const gridparam_t *p, const avgw_cutparam_t *c, float *fcut)
 {
-  int i, k, each;
-  float h;
+	int i, k, each;
+	float h;
 
-  h = p->dk / g->dk;
-  if (p->interp) {
-    ssplint_uni(f->np, f->s, f->s2, c->npcut, h, h, fcut);
-  } else {
-    each = (int) (h + 0.5);
-    k = each;
-    for (i = 0; i < c->npcut; i++) {
-      fcut[i] = f->s[k];
-      k += each;
-    }
-  }
+	h = p->dk / g->dk;
+	if (p->interp) {
+		ssplint_uni(f->np, f->s, f->s2, c->npcut, h, h, fcut);
+	} else {
+		each = (int) (h + 0.5);
+		k = each;
+		for (i = 0; i < c->npcut; i++) {
+			fcut[i] = f->s[k];
+			k += each;
+		}
+	}
 }

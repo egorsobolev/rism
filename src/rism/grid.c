@@ -7,12 +7,12 @@
 
 int grid_init(int n, double dr, grid_t *g)
 {
-  g->ngrid = n;
-  g->n = n - 1;
-  g->dr = dr;
-  g->dk = M_PI / (dr * n);
-  g->f = 2.0 * M_PI * dr * dr;
-  g->b = 0.5 / (g->f * n);
-  g->c = 0.5 / n;
-  return 0;
+	g->ngrid = n;
+	g->n = n - 1;
+	g->dr = dr;
+	g->dk = M_PI / (dr * n);
+	g->f = 2.0 * M_PI * dr * dr;
+	g->b = 0.5 / (g->f * n);
+	g->c = 0.5 / n;
+	return 0;
 }

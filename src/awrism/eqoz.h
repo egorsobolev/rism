@@ -6,12 +6,12 @@
 
 struct SOLV
 {
-  int ngrid;
-  double *xvv;
-  double *symc;
-  int *n;
-  double t;
-  double rho;
+	int ngrid;
+	double *xvv;
+	double *symc;
+	int *n;
+	double t;
+	double rho;
 };
 typedef struct SOLV solv_t;
 
@@ -23,29 +23,29 @@ typedef void closure_c(rismaw_t *, const double *, double *);
 
 struct RISM_IDL_PARM
 {
-  int reduc;
-  double ngalpha;
+	int reduc;
+	double ngalpha;
 };
 typedef struct RISM_IDL_PARM rism_parm_t;
 
 struct RISM_IDL_AW
 {
-  int natu;
-  int natv;
-  int nfun;
+	int natu;
+	int natv;
+	int nfun;
 
-  solv_t v;
-  grid_t ge;
-  avgw_t wuu;
-  potenuv_t puv;
-  closure *closure;
-  closure_c *closure_c;
+	solv_t v;
+	grid_t ge;
+	avgw_t wuu;
+	potenuv_t puv;
+	closure *closure;
+	closure_c *closure_c;
 
-  grid_t gj;
-  float *dcdt;
+	grid_t gj;
+	float *dcdt;
 
-  int reduc;
-  double ngalpha;
+	int reduc;
+	double ngalpha;
 };
 
 

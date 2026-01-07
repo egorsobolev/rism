@@ -5,18 +5,18 @@
 
 struct SPRW
 {
-  int nfun;
-  /*
-  int *n;
-  int *i0;
-  int *nj;
-  */
-  int ngs;
-  int ngl;
-  int nl;
-  int p;
-  int *i;
-  float *s;
+	int nfun;
+	/*
+	int *n;
+	int *i0;
+	int *nj;
+	*/
+	int ngs;
+	int ngl;
+	int nl;
+	int p;
+	int *i;
+	float *s;
 };
 typedef struct SPRW sprw_t;
 

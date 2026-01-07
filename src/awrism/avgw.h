@@ -3,13 +3,13 @@
 
 struct AVGW
 {
-  int np;
-  float dr;
-  int nfun;
-  int *n;
-  int *i;
-  int *nj;
-  float *s;
+	int np;
+	float dr;
+	int nfun;
+	int *n;
+	int *i;
+	int *nj;
+	float *s;
 };
 
 typedef struct AVGW avgw_t;

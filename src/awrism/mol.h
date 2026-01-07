@@ -2,18 +2,18 @@
 #define __RISM_MOL_H
 
 struct MolForceFiled {
-  double *s, *q, *e;
+	double *s, *q, *e;
 };
 typedef struct MolForceFiled molff_t;
 
 
 struct Molecule {
-  int natom, ntype;
-  int *atyp, *ityp;
-  double *x, *y, *z;
-  molff_t ff;
-  double o[3];
-  double qtot;
+	int natom, ntype;
+	int *atyp, *ityp;
+	double *x, *y, *z;
+	molff_t ff;
+	double o[3];
+	double qtot;
 };
 typedef struct Molecule mol_t;
 

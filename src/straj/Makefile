@@ -28,12 +28,12 @@ $(OBJSRL):	| .o.serial
 
 straj:	$(OBJSRL) librism.a
 	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
-	 -lblas -lm -o ../../bin/$@
+		-lblas -lm -o ../../bin/$@
 
 straj.MPI:	$(OBJMPI) librism-mpi.a
 	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
-	 -lrism-mpi -largtable2 -lblas -lm \
-	 -o ../../bin/$@
+		-lrism-mpi -largtable2 -lblas -lm \
+		-o ../../bin/$@
 
 librism.a:
 	cd ../rism && make serial

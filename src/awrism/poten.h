@@ -7,12 +7,12 @@
 
 struct POTENUV
 {
-  int ngrid;
-  int *atyp;
-  double *u;
-  double *asympr;
-  double *asympk;
-  double k;
+	int ngrid;
+	int *atyp;
+	double *u;
+	double *asympr;
+	double *asympk;
+	double k;
 };
 typedef struct POTENUV potenuv_t;
 

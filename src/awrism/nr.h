@@ -9,21 +9,21 @@ typedef void putx_func(const void *eq_data, const float *x, double *z);
 
 struct NRPARM
 {
-  int maxi, lmaxi, narm;
-  double rtol, etol;
+	int maxi, lmaxi, narm;
+	double rtol, etol;
 };
 typedef struct NRPARM nrparm_t;
 
 struct EQUATION
 {
-  int nZ;
-  int nJx;
-  eq_func *Z;
-  Jx_func *Jx;
-  getx_func *getb;
-  putx_func *putx;
-  void *p;
-  nrparm_t nrprm;
+	int nZ;
+	int nJx;
+	eq_func *Z;
+	Jx_func *Jx;
+	getx_func *getb;
+	putx_func *putx;
+	void *p;
+	nrparm_t nrprm;
 };
 typedef struct EQUATION eq_t;
 
