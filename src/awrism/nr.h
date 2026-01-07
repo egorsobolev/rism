@@ -24,10 +24,12 @@ struct EQUATION
 	putx_func *putx;
 	void *p;
 	nrparm_t nrprm;
+	float *nr_solver_data;
+	float *linear_solver_data;
 };
 typedef struct EQUATION eq_t;
 
 int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit);
-int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float *tol, int *it);
+int bicgstab(int N, const float *b, float *x, Jx_func *Jx, void *eq_data, float *tol, int *it, float *workspace);
 
 #endif //__RISM_NR_H

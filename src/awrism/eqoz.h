@@ -44,6 +44,9 @@ struct RISM_IDL_AW
 	grid_t gj;
 	float *dcdt;
 
+	double *Z_data;
+	float *Jx_data;
+
 	int reduc;
 	double ngalpha;
 };

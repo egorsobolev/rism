@@ -22,7 +22,7 @@
 
 int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 {
-	int i, j, l, u, exitcode, nfun, np, maxit, incu;
+	int i, j, l, u, k, exitcode, nfun, np, maxit, incu;
 	water_t w;
 	grid_t g;
 	int nn[3], n;
@@ -89,14 +89,35 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 			goto err2;
 		}
 
-		rism->dcdt = (float *) calloc(eq->nJx, sizeof(float));
+		/*
+		 dcdt: float[eq->nJx]
+		 Jx_data: float[eq->nJx]
+		 Z_data: double[eq->nZ]
+		 */
+		rism->dcdt = (float *) malloc(2 * eq->nJx * sizeof(float) +
+		                              eq->nZ * sizeof(double));
 		if (!rism->dcdt) {
-			printf("Error while allocating dcdt\n");
+			printf("Error while allocating dcdt and equation workspace\n");
 			exitcode = 8;
-			goto err5;
+			goto err3;
 		}
+		rism->Jx_data = rism->dcdt + eq->nJx;
+		rism->Z_data = (double *) (rism->Jx_data + eq->nJx);
 
-		tuv = (double *) calloc(2 * eq->nZ, sizeof(double));
+		/*
+		 nr_solver_data: float[2 * eq->nJx] + doulbe[3 * eq->nZ]
+		 linear_solver_data: float[5 * eq->nJx]
+		 */
+		eq->linear_solver_data = (float *) malloc(7 * eq->nJx * sizeof(float) +
+		                                          3 * eq->nZ * sizeof(double));
+		if (!eq->linear_solver_data) {
+			printf("Error while allocating solver's workspace\n");
+			exitcode = 7;
+			goto err4;
+		}
+		eq->nr_solver_data = eq->linear_solver_data + 5 * eq->nJx;
+
+		tuv = (double *) malloc(2 * eq->nZ * sizeof(double));
 		if (!tuv) {
 			printf("Error while allocationg tuv\n");
 			exitcode = 9;
@@ -109,8 +130,8 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 		l = 0;
 		for (u = 0; u < rism->natu; u++) {
 			j = rism->puv.atyp[u] * incu;
-			for (i = 0; i < incu; i++) {
-				tuv[l] = -rism->puv.asympr[j + i];
+			for (k = 0; k < incu; k++) {
+				tuv[l] = -rism->puv.asympr[j + k];
 				l++;
 			}
 		}
@@ -153,6 +174,7 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
 		nn[2] = m->natom;
 		write_dmtx("tuv.bin", 3, nn, tuv);
 		*/
+		free(eq->linear_solver_data);
 		free(tuv);
 		free(rism->dcdt);
 		poten_del(&rism->puv);
@@ -164,9 +186,10 @@ int awrism_mgrid(eq_t *eq, grid_param_t *gp, mol_t *m)
  err7:
 	free(tuv);
  err6:
-	free(rism->dcdt);
  err5:
+	free(eq->linear_solver_data);
  err4:
+	free(rism->dcdt);
  err3:
 	poten_del(&rism->puv);
  err2:
