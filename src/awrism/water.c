@@ -104,7 +104,7 @@ int water_read(const char *fn, water_t *w)
 		free(hv);
 		return 2;
 	}
-	w->xvv = (double *) calloc(3 * (w->ngrid + 1), sizeof(double));
+	w->xvv = (double *) malloc(3 * (w->ngrid + 1) * sizeof(double));
 	if (!w->xvv) {
 		free(hv);
 		return 4;

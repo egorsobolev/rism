@@ -17,7 +17,7 @@ int avgw_read(const char *fn, avgw_t *w, int nge, int reduc)
 		exitcode = -2;
 		goto err1;
 	}
-	w->n = (int *) calloc(3 * w->nfun, sizeof(int));
+	w->n = (int *) malloc(3 * w->nfun * sizeof(int));
 	if (!w->n) {
 		exitcode = -3;
 		goto err1;
@@ -37,7 +37,7 @@ int avgw_read(const char *fn, avgw_t *w, int nge, int reduc)
 		w->nj[i] = n > ngj ? ngj : n;
 		if (w->n[i] > nge) w->n[i] = nge;
 	}
-	w->s = (float *) calloc(m, sizeof(float));
+	w->s = (float *) malloc(m * sizeof(float));
 	if (!w->s) {
 		exitcode = -5;
 		goto err2;
