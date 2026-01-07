@@ -205,7 +205,7 @@ int main(int narg, char **argv)
 		}
 		toc = walltime();
 		if (!rank)
-			printf("%10lf s, %d bytes, %d frames, %d pairs\n", toc - tic, (3 * s.natm + s.nfun) * sizeof(float) + 4 * s.nfun * sizeof(double), s.nfrm, s.nfun);
+			printf("%10lf s, %ld bytes, %d frames, %d pairs\n", toc - tic, (3 * s.natm + s.nfun) * sizeof(float) + 4 * s.nfun * sizeof(double), s.nfrm, s.nfun);
 	} else {
 		printf("Trajectory has only %d frame(s).\n", traj.frm);
 		printf("Nothing was done.\n");

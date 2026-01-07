@@ -139,7 +139,7 @@ int main(int narg, char **argv)
 	}
 	toc = walltime();
 	if (!rank)
-		printf("%10lf s, %d bytes, %d numbers\n", toc - tic, s.nfun * sizeof(float) + 2 * d.nfun * sizeof(int) + d.n * sizeof(unsigned), d.n);
+		printf("%10lf s, %ld bytes, %d numbers\n", toc - tic, s.nfun * sizeof(float) + 2 * d.nfun * sizeof(int) + d.n * sizeof(unsigned), d.n);
 	exitcode = EXIT_SUCCESS;
 
 err6:
