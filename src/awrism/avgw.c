@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <cblas.h>
 
 int avgw_read(const char *fn, avgw_t *w, int nge, int reduc)
 {
@@ -75,58 +74,62 @@ void avgw_mul_dbl(const avgw_t *w, int ngrid, int natv, int natu, const double *
 	np = incu * natu;
 
 
-	cblas_dcopy(np, x, 1, r, 1);
-	for (s = 0; s < w->nfun; s++) {
-		i0 = w->i[s];
-		n = w->n[s];
+	#pragma omp for
+	for (i = 0; i < np; i++)
+		r[i] = x[i];
+	#pragma omp for
+	for (u = 0; u < natu; u++) {
+		for (j = 0; j < natu; j++) {
+			if (u == j) continue;
+			s = max(j, u);
+			s = s * (s - 1) / 2 + min(j, u);
 
-		u = (int) (sqrt(2.0 * s + 0.25) + 0.5);
-		j = s - u * (u - 1) / 2;
+			i0 = w->i[s];
+			n = w->n[s];
 
-		l = u * incu;
-		k = j * incu;
-
-		for (v = 0; v < natv; v++) {
-			for (i = 0; i < n; i++) {
-				a = (double) w->s[i0+i];
-				r[l+i] += a * x[k+i];
-				r[k+i] += a * x[l+i];
+			for (v = 0; v < natv; v++) {
+				l = u * incu + v * ngrid;
+				k = j * incu + v * ngrid;
+				for (i = 0; i < n; i++) {
+					a = (double) w->s[i0 + i];
+					r[l+i] += a * x[k+i];
+				}
 			}
-			l += ngrid;
-			k += ngrid;
+
 		}
 	}
 }
 
 void avgw_mul_flt(const avgw_t *w, int incw, int ngrid, int natv, int natu, const float *x, float *r)
 {
-	int np, s, i0, n, u, v, j, i, l, k, t, incu;
+	int np, s, i0, n, u, v, j, i, l, k, incu;
 	float a;
 
 	incu = ngrid * natv;
 	np = incu * natu;
 
-	cblas_scopy(np, x, 1, r, 1);
-	for (s = 0; s < w->nfun; s++) {
-		i0 = w->i[s];
-		n = w->nj[s];
+	#pragma omp for
+	for (i = 0; i < np; i++)
+		r[i] = x[i];
+	#pragma omp for
+	for (u = 0; u < natu; u++) {
+		for (j = 0; j < natu; j++) {
+			if (u == j) continue;
+			s = max(j, u);
+			s = s * (s - 1) / 2 + min(j, u);
 
-		u = (int) (sqrt(2.0 * s + 0.25) + 0.5);
-		j = s - u * (u - 1) / 2;
+			i0 = w->i[s] - 1;
+			n = w->nj[s];
 
-		l = u * incu;
-		k = j * incu;
-
-		for (v = 0; v < natv; v++) {
-			t = incw - 1;
-			for (i = 0; i < n; i++) {
-				a = w->s[i0 + t];
-				r[l+i] += a * x[k+i];
-				r[k+i] += a * x[l+i];
-				t += incw;
+			for (v = 0; v < natv; v++) {
+				l = u * incu + v * ngrid;
+				k = j * incu + v * ngrid;
+				for (i = 0; i < n; i++) {
+					a = w->s[i0 + incw * (i + 1)];
+					r[l+i] += a * x[k+i];
+				}
 			}
-			l += ngrid;
-			k += ngrid;
+
 		}
 	}
 }
