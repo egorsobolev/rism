@@ -13,7 +13,7 @@
 #define print   printf
 #define flush   fflush(stdin)
 
-#define sarm    (0.618033988749895)
+#define SCALE_ARM    (0.618033988749895)
 
 
 /* + 5 * n * sizeof(float)*/
@@ -59,9 +59,10 @@ double ftew_next(fterm_ew_t *f, double normd)
 /* 9 * n * sizeof(float) */
 int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 {
-	double *d, *s, *tN, norms, eta, lambda, err, errN, v, en1, en2, dE, errv;
+	double *d, *s, *tN, norms, eta, lambda, err, errN, sqrt_n, en1, en2, dE, errv;
 	float *b, *x, eps;
-	int n, m, i, j, flag, nlit, maxlit, l, narm;
+	int n, m, i, j, flag, nlit, maxlit, l, narm, maxarm, fail;
+	double sumd2;
 	double lntm, nrtm, lntmi, nrtm_cpu;
 	fterm_ew_t fterm;
 
@@ -71,7 +72,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 
 	ftew_setdef(&fterm, *rtol);
 	maxlit = eq->nrprm.lmaxi;
-	narm = eq->nrprm.narm;
+	maxarm = eq->nrprm.narm;
 	/*
 	ln.natv = eq->solv.natv;
 	ln.symc = eq->solv.symc;
@@ -96,7 +97,7 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 	/*
 	n = eq->solv.natv * eq->grid.nr;
 	*/
-	v = sqrt(n);
+	sqrt_n = sqrt(n);
 
 	b = eq->nr_solver_data;
 	x = b + m;
@@ -104,9 +105,28 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 	s = d + n;
 	tN = s + n;
 
-	eq->Z(eq->p, t, d, &en1);
-	err = cblas_dnrm2(n, d, 1) / v;
+	fail = 0;
+	sumd2 = 0.0;
+	#pragma omp parallel
+	{
+		int k;
 
+		eq->Z(eq->p, t, d, &en1);
+
+		#pragma omp for reduction(+:sumd2)
+		for (k = 0; k < n; k++)
+			sumd2 += d[k] * d[k];
+
+		#pragma omp single nowait
+		err = sqrt(sumd2) / sqrt_n;
+
+		#pragma omp for
+		for (k = 0; k < m; k++)
+			x[k] = .0f;
+
+		eq->getb(eq->p, d, b);
+
+	}
 	dE = DBL_MAX;
 
 	print("RMSE(Z[0]) = %.1e\n", err);
@@ -120,8 +140,6 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 		eps = (float) eta;
 		eps = 0.2;
 
-		eq->getb(eq->p, d, b);
-		memset(x, 0, m * sizeof(float));
 
 		lntmi = walltime() * 1e-6;
 		flag = bicgstab(m, b, x, eq->Jx, eq->p, &eps, &nlit, eq->linear_solver_data);
@@ -133,38 +151,87 @@ int nr(eq_t *eq, double *t, double *rtol, double *etol, int *maxit)
 			return 1;
 		}
 		norms = (double) eps;
-
-		cblas_dcopy(n, d, 1, s, 1);
-		cblas_sscal(m, -1.0, x, 1);
-		eq->putx(eq->p, x, s);
-
-		cblas_dcopy(n, t, 1, tN, 1);
-		cblas_daxpy(n, 1.0, s, 1, tN, 1);
 		en2 = en1;
-		eq->Z(eq->p, tN, d, &en1);
-		errN = cblas_dnrm2(n, d, 1) / v;
 
-		j = 0;
-		lambda = 1.0;
-		while (j < narm && errN > err) {
-			lambda *= sarm;
-			cblas_dcopy(n, t, 1, tN, 1);
-			cblas_daxpy(n, lambda, s, 1, tN, 1);
+		#pragma omp parallel
+		{
+			int k, j;
+			double errN, lambda;
+
+			#pragma omp for
+			for (k = 0; k < n; k++)
+				s[k] = -d[k];
+
+			eq->putx(eq->p, x, s);
+
+			#pragma omp for
+			for (k = 0; k < n; k++)
+				tN[k] = t[k] - s[k];
+
 			eq->Z(eq->p, tN, d, &en1);
-			errN = cblas_dnrm2(n, d, 1) / v;
-			++j;
-		}
 
-		if (j >= narm) {
+			#pragma single nowait
+			sumd2 = 0.0;
+			#pragma omp for reduction(+:sumd2)
+			for (k = 0; k < n; k++)
+				sumd2 += d[k] * d[k];
+			errN = sqrt(sumd2) / sqrt_n;
+
+			j = 0;
+			lambda = 1.0;
+			while (j < maxarm && errN > err) {
+				lambda *= SCALE_ARM;
+				#pragma omp for
+				for (k = 0; k < n; k++)
+					tN[k] = t[k] - lambda * s[k];
+
+				eq->Z(eq->p, tN, d, &en1);
+
+				#pragma omp single nowait
+				sumd2 = 0.0;
+				#pragma omp for reduction(+:sumd2)
+				for (k = 0; k < n; k++)
+					sumd2 += d[k] * d[k];
+				errN = sqrt(sumd2) / sqrt_n;
+				#pragma omp single
+				printf("* %d %lf %lf\n", j, errN, err);
+				++j;
+			}
+			if (j >= maxarm) {
+				/* no convergence of armigo*/
+				#pragma omp single nowait
+				fail = 1;
+			} else {
+				#pragma omp barrier
+				#pragma omp single
+				sumd2 = 0.0;
+				#pragma omp for reduction(+:sumd2)
+				for (k = 0; k < n; k++) {
+					t[k] = tN[k];
+					sumd2 += s[k] * s[k];
+				}
+
+				#pragma omp for
+				for (k = 0; k < m; k++)
+					x[k] = .0f;
+
+				eq->getb(eq->p, d, b);
+
+				#pragma omp single nowait
+				errv = lambda * sqrt(sumd2) / sqrt_n;
+				#pragma omp single nowait
+				err = errN;
+				#pragma omp single nowait
+				dE = en2 - en1;
+				#pragma omp single nowait
+				narm = j;
+			}
+		}
+		if (fail) {
 			/* no convergence of armigo*/
 			return 2;
 		}
-		cblas_dcopy(n, tN, 1, t, 1);
-		err = errN;
-		dE = en2 - en1;
-		errv = lambda * cblas_dnrm2(n, s, 1) / v;
-
-		print("%5d %7d %1d %8.1f %1d %5.2f %10.6f %8.1e %8.1e %8.1e\n", i+1, nlit, flag, lntmi, j, eta, norms, err, dE, errv);
+		print("%5d %7d %1d %8.1f %1d %5.2f %10.6f %8.1e %8.1e %8.1e\n", i+1, nlit, flag, lntmi, narm, eta, norms, err, dE, errv);
 		flush;
 		++i;
 	}
