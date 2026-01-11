@@ -6,6 +6,7 @@
 #include <float.h>
 #include <cblas.h>
 #include <fft.h>
+#include <omp.h>
 
 #include <rism/grid.h>
 #include "water.h"
@@ -241,7 +242,8 @@ int main(int narg, char **argv)
 	}
 
 	openblas_set_num_threads(opt.nthr->ival[0]);
-	cpocketfft_set_num_threads(opt.nthr->ival[0]);
+	cpocketfft_set_num_threads(1);
+	omp_set_num_threads(opt.nthr->ival[0]);
 
 	printf("1. GRID PARAMETERS\n");
 	printf(" # solvent file                        average matrix file\n");
