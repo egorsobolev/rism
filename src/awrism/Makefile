@@ -11,10 +11,10 @@ serial: awrism
 mpi:    awrism.MPI
 
 .o.serial/%.o:  %.c
-	$(CC) $(CFLAGS) -I ../../include -c -o $@ $<
+	$(CC) $(CFLAGS) -fopenmp -I ../../include -c -o $@ $<
 
 .o.mpi/%.o:     %.c
-	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -I ../../include -c -o $@ $<
+	$(MPICC) -DMPI $(CFLAGS) $(MPICFLAGS) -fopenmp -I ../../include -c -o $@ $<
 
 $(OBJMPI):      | .o.mpi
 
@@ -29,12 +29,12 @@ $(OBJSRL):      | .o.serial
 awrism:  librism.a ../../lib/libcpocketfft.a $(OBJSRL)
 	$(CC) $(LFLAGS) -L../../lib $(OBJSRL) -lrism -largtable2 \
 		-lopenblas -lm -lcpocketfft -lstdc++ \
-		-o ../../bin/$@
+		-fopenmp -o ../../bin/$@
 
 awrism.MPI:      librism-mpi.a ../../lib/libcpocketfft.a $(OBJMPI)
 	$(MPICC) $(LFLAGS) $(MPILFLAGS) -L../../lib $(OBJMPI) \
 		-lrism-mpi -largtable2 -lopenblas -lm -lcpocketfft -lstdc++ \
-		-o ../../bin/$@
+		-fopenmp -o ../../bin/$@
 
 librism.a:
 	cd ../rism && make serial
